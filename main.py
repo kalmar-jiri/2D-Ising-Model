@@ -1,9 +1,14 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import math
 #plt.style.use(['science','notebook','grid'])
 
 # ----------------- INITIALIZATION ----------------- #
+k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
+T = int(input("Temperature [K]: "))
+B = k*T
+
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 N = int(input("Order of the lattice: "))
 
@@ -70,6 +75,11 @@ def energy_diff(lattice0, lattice1):
 new_lattice = change_rand_spin(lattice.copy())
 dE = energy_diff(lattice, new_lattice)
 
+if dE < 0:
+  lattice = new_lattice
+else:
+  if math.exp(-B*dE) > random.random():
+    lattice = new_lattice
 
 
 #plt.imshow(lattice)
