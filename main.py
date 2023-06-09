@@ -25,8 +25,9 @@ for i in range(N):
 # -------------------------------------------------- #
   
 
-# Calculate the energies of sites based on their nearest neighbors
-def energy_matrix(lattice):
+# Calculaten energies of sites based on their nearest neighbors
+# and calculate the energy of the configuration
+def get_energy(lattice):
   en_mat = np.zeros((N,N))
   for i in range(N):
     for j in range(N):
@@ -53,11 +54,7 @@ def energy_matrix(lattice):
 
       en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
 
-  return en_mat
-
-
-def total_energy(energies):
-  return 0.5*np.sum(energies)
+  return 0.5*np.sum(en_mat)
     
 
 # Choose a random spin site and change its spin
@@ -71,10 +68,11 @@ def change_rand_spin(lat):
 
 # Calculate the energy difference between two configurations
 def energy_diff(lattice0, lattice1):
-  en_mat0 = energy_matrix(lattice0)
-  en_mat1 = energy_matrix(lattice1)
+  return get_energy(lattice1) - get_energy(lattice0)
 
-  return total_energy(en_mat1) - total_energy(en_mat0)
+
+def sum_spin(lattice):
+  return np.sum(lattice)/N**2
 
 
 # Save the configuration image
@@ -88,18 +86,27 @@ def save_img(configuration, iteration):
 def energy_plot(config_energies, B):
   plt.plot(range(len(config_energies)), config_energies, 'r')  # Points for graph, color, label
   plt.xlabel("Steps")  # Label for x axis
-  plt.ylabel("Energy")  # Label for y axis - the [m/s] to ensure that probability is dimensionless
-  plt.title(fr'Energy evolution of Ising model at $\beta$ = {str(B)} K')  # Title
+  plt.ylabel("Energy")  # Label for y axis 
+  plt.title(fr'Energy evolution of Ising model at $\beta$ = {str(B)}')  # Title
   #plt.legend(loc="upper right")  # Position of legend
-  plt.show()  # Show graph for MB distribution function of certain atom
+  plt.show()  
+
+
+def spin_plot(config_spins, B):
+  plt.plot(range(len(config_spins)), config_spins, 'b')  # Points for graph, color, label
+  plt.xlabel("Steps")  # Label for x axis
+  plt.ylabel("Average spin")  # Label for y axis 
+  plt.title(fr'Average spin evolution of Ising model at $\beta$ = {str(B)}')  # Title
+  #plt.legend(loc="upper right")  # Position of legend
+  plt.show()
 
 
 #@jit(nopython=True)
-def metropolis(init_lattice, steps):
+def metropolis(lattice, steps):
 
-  lattice = init_lattice
-  energy = total_energy(energy_matrix(lattice))
+  energy = get_energy(lattice)
   config_energies = [energy]
+  config_spins = [sum_spin(lattice)]
 
   for _ in range(steps):
 
@@ -110,15 +117,20 @@ def metropolis(init_lattice, steps):
       lattice = new_lattice
       energy += dE
       config_energies.append(energy)
+      config_spins.append(sum_spin(new_lattice))
     else:
       if math.exp(-B*dE) > random.random():
         lattice = new_lattice
         energy += dE
         config_energies.append(energy)
+        config_spins.append(sum_spin(new_lattice))
 
 
   energy_plot(config_energies, B)
+  spin_plot(config_spins, B)
+
+  return config_energies, config_spins
 
 
 
-metropolis(lattice.copy(), 100000)
+metropolis(lattice, 100000)
