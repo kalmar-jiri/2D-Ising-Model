@@ -7,9 +7,10 @@ from numba import jit
 #plt.style.use(['science','notebook','grid'])
 
 # ----------------- INITIALIZATION ----------------- #
-k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
-T = int(input("Temperature [K]: "))
-B = k*T
+# k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
+# T = int(input("Temperature [K]: "))
+# B = 1/(k*T)
+B = float(input("Value of B = 1/kT: "))
 
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 N = int(input("Order of the lattice: "))
@@ -84,23 +85,23 @@ def save_img(configuration, iteration):
 
 
 # Make an energy/steps plot
-def energy_plot(config_energies, T):
+def energy_plot(config_energies, B):
   plt.plot(range(len(config_energies)), config_energies, 'r')  # Points for graph, color, label
   plt.xlabel("Steps")  # Label for x axis
   plt.ylabel("Energy")  # Label for y axis - the [m/s] to ensure that probability is dimensionless
-  plt.title(f'Energy evolution of Ising model at {str(T)} K')  # Title
+  plt.title(fr'Energy evolution of Ising model at $\beta$ = {str(B)} K')  # Title
   #plt.legend(loc="upper right")  # Position of legend
   plt.show()  # Show graph for MB distribution function of certain atom
 
 
 #@jit(nopython=True)
-def metropolis(init_lattice):
+def metropolis(init_lattice, steps):
 
   lattice = init_lattice
   energy = total_energy(energy_matrix(lattice))
   config_energies = [energy]
 
-  for _ in range(10000):
+  for _ in range(steps):
 
     new_lattice = change_rand_spin(lattice.copy())
     dE = energy_diff(lattice, new_lattice)
@@ -116,8 +117,8 @@ def metropolis(init_lattice):
         config_energies.append(energy)
 
 
-  energy_plot(config_energies, T)
+  energy_plot(config_energies, B)
 
 
 
-metropolis(lattice.copy())
+metropolis(lattice.copy(), 100000)
