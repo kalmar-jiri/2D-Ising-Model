@@ -2,6 +2,8 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import math
+import csv
+from numba import jit
 #plt.style.use(['science','notebook','grid'])
 
 # ----------------- INITIALIZATION ----------------- #
@@ -18,11 +20,11 @@ for i in range(N):
   for j in range(N):
     lattice[i][j] = random.choice((-1,1))
 
-print(lattice)
-
+#print(lattice)
 # -------------------------------------------------- #
   
 
+# Calculate the energies of sites based on their nearest neighbors
 def energy_matrix(lattice):
   en_mat = np.zeros((N,N))
   for i in range(N):
@@ -57,6 +59,7 @@ def total_energy(energies):
   return 0.5*np.sum(energies)
     
 
+# Choose a random spin site and change its spin
 def change_rand_spin(lat):
   i = random.randint(0,N-1)
   j = random.randint(0,N-1)
@@ -65,6 +68,7 @@ def change_rand_spin(lat):
   return lat
 
 
+# Calculate the energy difference between two configurations
 def energy_diff(lattice0, lattice1):
   en_mat0 = energy_matrix(lattice0)
   en_mat1 = energy_matrix(lattice1)
@@ -72,14 +76,48 @@ def energy_diff(lattice0, lattice1):
   return total_energy(en_mat1) - total_energy(en_mat0)
 
 
-new_lattice = change_rand_spin(lattice.copy())
-dE = energy_diff(lattice, new_lattice)
-
-if dE < 0:
-  lattice = new_lattice
-else:
-  if math.exp(-B*dE) > random.random():
-    lattice = new_lattice
+# Save the configuration image
+def save_img(configuration, iteration):
+  plt.imshow(configuration)
+  plt.savefig(f'configs/config{iteration}.png')
+  #plt.show()
 
 
-#plt.imshow(lattice)
+# Make an energy/steps plot
+def energy_plot(config_energies, T):
+  plt.plot(range(len(config_energies)), config_energies, 'r')  # Points for graph, color, label
+  plt.xlabel("Steps")  # Label for x axis
+  plt.ylabel("Energy")  # Label for y axis - the [m/s] to ensure that probability is dimensionless
+  plt.title(f'Energy evolution of Ising model at {str(T)} K')  # Title
+  #plt.legend(loc="upper right")  # Position of legend
+  plt.show()  # Show graph for MB distribution function of certain atom
+
+
+#@jit(nopython=True)
+def metropolis(init_lattice):
+
+  lattice = init_lattice
+  energy = total_energy(energy_matrix(lattice))
+  config_energies = [energy]
+
+  for _ in range(10000):
+
+    new_lattice = change_rand_spin(lattice.copy())
+    dE = energy_diff(lattice, new_lattice)
+
+    if dE < 0:
+      lattice = new_lattice
+      energy += dE
+      config_energies.append(energy)
+    else:
+      if math.exp(-B*dE) > random.random():
+        lattice = new_lattice
+        energy += dE
+        config_energies.append(energy)
+
+
+  energy_plot(config_energies, T)
+
+
+
+metropolis(lattice.copy())

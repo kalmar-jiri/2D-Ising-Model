@@ -7,6 +7,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+configs/
+energy.csv
+energy.png
+
 # C extensions
 *.so
 
