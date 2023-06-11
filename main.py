@@ -3,7 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import math
 import csv
-from numba import jit, njit
+from numba import njit
 import statistics as stat
 #plt.style.use(['science','notebook','grid'])
 
@@ -22,7 +22,16 @@ for i in range(N):
   for j in range(N):
     lattice[i][j] = random.choice((-1,1))
 
-#print(lattice)
+
+init_random = np.random.random((N,N))
+lattice_n = np.zeros((N,N))
+lattice_n[init_random>0.75] = 1
+lattice_n[init_random<=0.75] = -1
+
+init_random = np.random.random((N,N))
+lattice_p = np.zeros((N,N))
+lattice_p[init_random>0.75] = -1
+lattice_p[init_random<=0.75] = 1
 # -------------------------------------------------- #
   
 
@@ -90,22 +99,21 @@ def save_img(configuration, iteration):
 
 
 # Make an energy/steps plot
-def energy_plot(config_energies, B):
-  plt.plot(range(len(config_energies)), config_energies, 'r')  # Points for graph, color, label
-  plt.xlabel("Steps")  # Label for x axis
-  plt.ylabel("Energy")  # Label for y axis 
-  plt.title(fr'Energy evolution of Ising model at $\beta$ = {str(B)}')  # Title
-  #plt.legend(loc="upper right")  # Position of legend
-  plt.show()  
-
-# Make an spin/steps plot
-def spin_plot(config_spins, B):
-  plt.plot(range(len(config_spins)), config_spins, 'b')  # Points for graph, color, label
-  plt.xlabel("Steps")  # Label for x axis
-  plt.ylabel("Average spin")  # Label for y axis
-  plt.ylim([-1,1]) 
-  plt.title(fr'Average spin evolution of Ising model at $\beta$ = {str(B)}')  # Title
-  #plt.legend(loc="upper right")  # Position of legend
+def plot_energy_spin(config_energies, config_spins, B):
+  fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+  ax = axes[0]
+  ax.plot(config_energies, 'b')
+  ax.set_xlabel("Steps")
+  ax.set_ylabel("Energy")
+  ax.grid()
+  ax = axes[1]
+  ax.plot(config_spins, 'r')
+  ax.set_xlabel("Steps")
+  ax.set_ylabel("Average spin")
+  ax.set_ylim([-1,1]) 
+  ax.grid()
+  #fig.tight_layout()
+  fig.suptitle(fr"Evolution of average energy and spin for $\beta={B}$")
   plt.show()
 
 
@@ -136,7 +144,6 @@ def metropolis(lattice, steps, B):
   return config_energies, config_spins
 
 
-#@njit
 def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step):
 
   mean_energy = []
@@ -145,8 +152,8 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
   for temp in np.arange(init_temp, final_temp, temp_step):
     config_energies, config_spins = metropolis(lattice, metro_steps, temp)
 
-    mean_energy.append(stat.mean(config_energies[-100000:]))
-    mean_spin.append(stat.mean(config_spins[-100000:]))
+    mean_energy.append(stat.mean(config_energies[-40000:]))
+    mean_spin.append(stat.mean(config_spins[-40000:]))
 
   plt.plot(np.arange(init_temp, final_temp, temp_step), mean_energy, 'r')  # Points for graph, color, label
   plt.xlabel(fr"Temperature [$\beta$]")  # Label for x axis
@@ -163,11 +170,10 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
   plt.show() 
 
 
-#avg_energy_spin_temp(lattice, 3500000, 0.1, 2, 0.05)
+# avg_energy_spin_temp(lattice_n, 5000000, 0.1, 2, 0.05)
 
 
-# config_energies, config_spins = metropolis(lattice, 5000000, B)
-# energy_plot(config_energies, B)
-# spin_plot(config_spins, B)
+config_energies, config_spins = metropolis(lattice_p, 3500000, B)
+plot_energy_spin(config_energies, config_spins, B)
 
 
