@@ -5,7 +5,8 @@ import math
 import csv
 from numba import njit
 import statistics as stat
-#plt.style.use(['science','notebook','grid'])
+
+plt.style.use('seaborn-v0_8-notebook')
 
 # ----------------- INITIALIZATION ----------------- #
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
@@ -91,7 +92,6 @@ def sum_spin(lattice):
 
 
 # Save the configuration image
-@njit
 def save_img(configuration, iteration):
   plt.imshow(configuration)
   plt.savefig(f'configs/config{iteration}.png')
@@ -109,7 +109,7 @@ def plot_energy_spin(config_energies, config_spins, B):
   ax = axes[1]
   ax.plot(config_spins, 'r')
   ax.set_xlabel("Steps")
-  ax.set_ylabel("Average spin")
+  ax.set_ylabel(r"Average spin $\bar{m}$")
   ax.set_ylim([-1,1]) 
   ax.grid()
   #fig.tight_layout()
@@ -132,48 +132,48 @@ def metropolis(lattice, steps, B):
     if dE < 0:
       lattice = new_lattice
       energy += dE
-      config_energies.append(energy)
-      config_spins.append(sum_spin(new_lattice))
-    else:
-      if math.exp(-B*dE) > random.random():
-        lattice = new_lattice
-        energy += dE
-        config_energies.append(energy)
-        config_spins.append(sum_spin(new_lattice))
+      
+    elif math.exp(-B*dE) > random.random():
+      lattice = new_lattice
+      energy += dE
+
+    config_energies.append(energy)
+    config_spins.append(sum_spin(new_lattice))
 
   return config_energies, config_spins
 
 
+# Get the changing average energy and average spin with changing temperature
+# And plot the evolution
 def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step):
-
   mean_energy = []
   mean_spin = []
 
   for temp in np.arange(init_temp, final_temp, temp_step):
     config_energies, config_spins = metropolis(lattice, metro_steps, temp)
 
-    mean_energy.append(stat.mean(config_energies[-40000:]))
-    mean_spin.append(stat.mean(config_spins[-40000:]))
+    mean_energy.append(stat.mean(config_energies[-100000:]))
+    mean_spin.append(stat.mean(config_spins[-100000:]))
 
-  plt.plot(np.arange(init_temp, final_temp, temp_step), mean_energy, 'r')  # Points for graph, color, label
-  plt.xlabel(fr"Temperature [$\beta$]")  # Label for x axis
-  plt.ylabel("Average Energy")  # Label for y axis 
-  plt.title(fr'Average energy evolution with changing temperature')  # Title
-  #plt.legend(loc="upper right")  # Position of legend
+  fig, axes = plt.subplots(1, 2, figsize=(18, 6))
+  ax = axes[0]
+  ax.plot(1/np.arange(init_temp, final_temp, temp_step), mean_energy, 'b')
+  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  ax.set_ylabel("Average Energy")
+  ax.grid()
+  ax = axes[1]
+  ax.plot(1/np.arange(init_temp, final_temp, temp_step), mean_spin, 'r')
+  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  ax.set_ylabel(r"Average spin $\bar{m}$")
+  ax.set_ylim([-1,1]) 
+  ax.grid()
+  fig.suptitle(fr"Average energy and spin evolution with changing temperature $\beta$")
   plt.show()
 
-  plt.plot(np.arange(init_temp, final_temp, temp_step), mean_spin, 'b')  # Points for graph, color, label
-  plt.xlabel(fr"Temperature [$\beta$]")  # Label for x axis
-  plt.ylabel("Average spin")  # Label for y axis 
-  plt.title('Average spin evolution with changing temperature')  # Title
-  #plt.legend(loc="upper right")  # Position of legend
-  plt.show() 
+#avg_energy_spin_temp(lattice_p, 1000000, 0.1, 2, 0.05)
 
 
-# avg_energy_spin_temp(lattice_n, 5000000, 0.1, 2, 0.05)
-
-
-config_energies, config_spins = metropolis(lattice_p, 3500000, B)
+config_energies, config_spins = metropolis(lattice_p, 1000000, B)
 plot_energy_spin(config_energies, config_spins, B)
 
 
