@@ -5,6 +5,7 @@ import math
 import csv
 from numba import njit
 import statistics as stat
+from PIL import Image
 
 plt.style.use('seaborn-v0_8-notebook')
 
@@ -12,7 +13,7 @@ plt.style.use('seaborn-v0_8-notebook')
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
-B = float(input("Value of B = 1/kT: "))
+B = float(input(r"Value of B = 1/kT: "))
 
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 N = int(input("Order of the lattice: "))
@@ -36,7 +37,7 @@ lattice_p[init_random<=0.75] = 1
 # -------------------------------------------------- #
   
 
-# Calculaten energies of sites based on their nearest neighbors
+# Calculate energies of sites based on their nearest neighbors
 # and calculate the energy of the configuration
 @njit
 def get_energy(lattice):
@@ -94,8 +95,9 @@ def sum_spin(lattice):
 # Save the configuration image
 def save_img(configuration, iteration):
   plt.imshow(configuration)
-  plt.savefig(f'configs/config{iteration}.png')
-  #plt.show()
+  #plt.savefig(f'configs/config{iteration}.png')
+  plt.show()
+  # return Image.fromarray(np.uint8((configuration + 1)* 0.5 * 255))
 
 
 # Make an energy/steps plot
@@ -125,7 +127,6 @@ def metropolis(lattice, steps, B):
   config_spins = [sum_spin(lattice)]
 
   for _ in range(steps):
-
     new_lattice = change_rand_spin(lattice.copy())
     dE = energy_diff(lattice, new_lattice)
 
@@ -147,33 +148,51 @@ def metropolis(lattice, steps, B):
 # And plot the evolution
 def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step):
   mean_energy = []
+  energy_stds = []
   mean_spin = []
 
   for temp in np.arange(init_temp, final_temp, temp_step):
     config_energies, config_spins = metropolis(lattice, metro_steps, temp)
 
     mean_energy.append(stat.mean(config_energies[-100000:]))
+    energy_stds.append(stat.stdev(config_energies[-100000:]))
     mean_spin.append(stat.mean(config_spins[-100000:]))
 
-  fig, axes = plt.subplots(1, 2, figsize=(18, 6))
+  fig, axes = plt.subplots(1, 3, figsize=(18, 6))
   ax = axes[0]
   ax.plot(1/np.arange(init_temp, final_temp, temp_step), mean_energy, 'b')
   ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
   ax.set_ylabel("Average Energy")
   ax.grid()
+
   ax = axes[1]
   ax.plot(1/np.arange(init_temp, final_temp, temp_step), mean_spin, 'r')
   ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
   ax.set_ylabel(r"Average spin $\bar{m}$")
   ax.set_ylim([-1,1]) 
   ax.grid()
-  fig.suptitle(fr"Average energy and spin evolution with changing temperature $\beta$")
+
+  ax = axes[2]
+  ax.plot(1/np.arange(init_temp, final_temp, temp_step), energy_stds, 'g')
+  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  ax.set_ylabel(r"$C_v/k_{{\mathrm{{B}}}}^2$")
+  ax.grid()
+
+  #fig.suptitle(fr"Average energy and spin evolution with changing temperature $\beta$")
+  fig.suptitle(fr"Average energy, spin and heat capacity evolution with changing temperature $\beta$")
   plt.show()
 
-#avg_energy_spin_temp(lattice_p, 1000000, 0.1, 2, 0.05)
+  # plt.plot(1/np.arange(init_temp, final_temp, temp_step), energy_stds, 'g')
+  # plt.xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  # plt.ylabel(r"$C_v/k_{{\mathrm{{B}}}}^2$")  # Label for y axis - the [m/s] to ensure that probability is dimensionless
+  # plt.title(f'Heat capacity of Ising model with changing temperature')  # Title
 
 
-config_energies, config_spins = metropolis(lattice_p, 1000000, B)
-plot_energy_spin(config_energies, config_spins, B)
+
+
+# config_energies, config_spins = metropolis(lattice, 1_000_000, B)
+# plot_energy_spin(config_energies, config_spins, B)
+
+avg_energy_spin_temp(lattice_p, 1_000_000, 0.1, 2, 0.05)
 
 
