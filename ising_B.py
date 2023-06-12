@@ -11,7 +11,7 @@ plt.style.use('seaborn-v0_8-notebook')
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
-B = float(input("Value of B = 1/kT: "))
+#B = float(input("Value of B = 1/kT: "))
 
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 N = int(input("Order of the lattice: "))
@@ -182,9 +182,9 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
 
 
-config_energies, config_spins = metropolis(lattice, 1_000_000, B)
-plot_energy_spin(config_energies, config_spins, B)
+# config_energies, config_spins = metropolis(lattice, 1_000_000, B)
+# plot_energy_spin(config_energies, config_spins, B)
 
-# avg_energy_spin_temp(lattice, 1_000_000, 0.1, 2, 0.05)
+avg_energy_spin_temp(lattice, 1_000_000, 0.1, 2.5, 0.05)
 
 
