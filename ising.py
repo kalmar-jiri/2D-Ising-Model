@@ -6,25 +6,22 @@ from numba import njit
 import statistics as stat
 import graph_plot as plots
 
-
-# plt.style.use('seaborn-v0_8-notebook')
-
 # ----------------- INITIALIZATION ----------------- #
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
-B = float(input("Value of B = 1/kT: "))
 
-J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
+print("--------- 2D ISING MODEL ---------")
+
 N = int(input("Order of the lattice: "))
 periodic = input("Use periodic boundary conditions? (y/n) ").lower()[0]
-print(periodic)
+J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
+mc_steps = int(input("Set a number of Monte Carlo simulation steps: "))
 
 init_lattice = np.zeros((N,N))
 for i in range(N):
   for j in range(N):
     init_lattice[i][j] = random.choice((-1,1))
-
 
 init_random = np.random.random((N,N))
 lattice_n = np.zeros((N,N))
@@ -35,6 +32,14 @@ init_random = np.random.random((N,N))
 lattice_p = np.zeros((N,N))
 lattice_p[init_random>0.75] = -1
 lattice_p[init_random<=0.75] = 1
+
+lattice_choice = input("Random, positive or negative spin field? (r/p/n) ").lower()[0]
+if lattice_choice == 'r':
+  lattice = init_lattice
+elif lattice_choice == 'p':
+  lattice = lattice_p
+elif lattice_choice == 'n':
+  lattice = lattice_n
 # -------------------------------------------------- #
   
 
@@ -155,10 +160,17 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
 
 
+print("---------------")
+print("Choose the mode:")
+print("1. Calculate a single energy/spin relaxation of the spin lattice\n2. Calculate the evolution of average energy, magnetization and heat capacity as a function of temperature")
+mode_choice = int(input("--> "))
+print("---------------")
 
-# config_energies, config_spins = metropolis(lattice_p.copy(), 1_000_000, B)
-# plots.plot_energy_spin(config_energies, config_spins, B)
-
-avg_energy_spin_temp(lattice_p.copy(), 1_000_000, 0.1, 2, 0.05)
+if mode_choice == 1:
+  B = float(input("Value of B = 1/kT: "))
+  config_energies, config_spins = metropolis(lattice.copy(), mc_steps, B)
+  plots.plot_energy_spin(config_energies, config_spins, B)
+elif mode_choice == 2:
+  avg_energy_spin_temp(lattice.copy(), mc_steps, 0.1, 2, 0.05)
 
 
