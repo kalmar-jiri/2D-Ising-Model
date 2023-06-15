@@ -11,17 +11,17 @@ plt.style.use('seaborn-v0_8-notebook')
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
-#B = float(input("Value of B = 1/kT: "))
+B = float(input("Value of B = 1/kT: "))
 
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 N = int(input("Order of the lattice: "))
 periodic = input("Use periodic boundary conditions? (y/n) ").lower()[0]
 print(periodic)
 
-lattice = np.zeros((N,N))
+init_lattice = np.zeros((N,N))
 for i in range(N):
   for j in range(N):
-    lattice[i][j] = random.choice((-1,1))
+    init_lattice[i][j] = random.choice((-1,1))
 
 
 init_random = np.random.random((N,N))
@@ -166,7 +166,9 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
   energy_stds = []
   mean_spin = []
 
-  for temp in np.arange(init_temp, final_temp, temp_step):
+  temp_range = np.arange(init_temp, final_temp, temp_step)
+
+  for temp in temp_range:
     config_energies, config_spins = metropolis(lattice, metro_steps, temp)
 
     mean_energy.append(stat.mean(config_energies[-100000:]))
@@ -175,20 +177,20 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
   fig, axes = plt.subplots(1, 3, figsize=(18, 6))
   ax = axes[0]
-  ax.plot(1/np.arange(init_temp, final_temp, temp_step), mean_energy, 'b')
+  ax.plot(1/temp_range, mean_energy, 'b')
   ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
   ax.set_ylabel("Average Energy")
   ax.grid()
 
   ax = axes[1]
-  ax.plot(1/np.arange(init_temp, final_temp, temp_step), mean_spin, 'r')
+  ax.plot(1/temp_range, mean_spin, 'r')
   ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
   ax.set_ylabel(r"Average spin $\bar{m}$")
   ax.set_ylim([-1,1]) 
   ax.grid()
 
   ax = axes[2]
-  ax.plot(1/np.arange(init_temp, final_temp, temp_step), energy_stds, 'g')
+  ax.plot(1/temp_range, energy_stds*temp_range, 'g')
   ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
   ax.set_ylabel(r"$C_v/k_{{\mathrm{{B}}}}^2$")
   ax.grid()
@@ -199,9 +201,9 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
 
 
-# config_energies, config_spins = metropolis(lattice, 1_000_000, B)
+# config_energies, config_spins = metropolis(lattice_p.copy(), 1_000_000, B)
 # plot_energy_spin(config_energies, config_spins, B)
 
-avg_energy_spin_temp(lattice, 1_000_000, 0.1, 2, 0.05)
+avg_energy_spin_temp(lattice_p.copy(), 1_000_000, 0.1, 2.5, 0.03)
 
 
