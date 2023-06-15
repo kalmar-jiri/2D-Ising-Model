@@ -4,8 +4,10 @@ import matplotlib.pyplot as plt
 import math
 from numba import njit
 import statistics as stat
+import graph_plot as plots
 
-plt.style.use('seaborn-v0_8-notebook')
+
+# plt.style.use('seaborn-v0_8-notebook')
 
 # ----------------- INITIALIZATION ----------------- #
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
@@ -107,32 +109,6 @@ def sum_spin(lattice):
   return np.sum(lattice)/N**2
 
 
-# Save the configuration image
-def save_img(configuration, iteration):
-  plt.imshow(configuration)
-  #plt.savefig(f'configs/config{iteration}.png')
-  plt.show()
-  # return Image.fromarray(np.uint8((configuration + 1)* 0.5 * 255))
-
-
-# Make an energy/steps plot
-def plot_energy_spin(config_energies, config_spins, B):
-  fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-  ax = axes[0]
-  ax.plot(config_energies, 'b')
-  ax.set_xlabel("Steps")
-  ax.set_ylabel("Energy")
-  ax.grid()
-  ax = axes[1]
-  ax.plot(config_spins, 'r')
-  ax.set_xlabel("Steps")
-  ax.set_ylabel(r"Average spin $\bar{m}$")
-  ax.set_ylim([-1,1]) 
-  ax.grid()
-  fig.suptitle(fr"Evolution of average energy and spin for $\beta={B}$")
-  plt.show()
-
-
 # Metropolis algorithm
 @njit
 def metropolis(lattice, steps, B):
@@ -175,35 +151,14 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
     energy_stds.append(stat.stdev(config_energies[-100000:]))
     mean_spin.append(stat.mean(config_spins[-100000:]))
 
-  fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-  ax = axes[0]
-  ax.plot(1/temp_range, mean_energy, 'b')
-  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
-  ax.set_ylabel("Average Energy")
-  ax.grid()
-
-  ax = axes[1]
-  ax.plot(1/temp_range, mean_spin, 'r')
-  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
-  ax.set_ylabel(r"Average spin $\bar{m}$")
-  ax.set_ylim([-1,1]) 
-  ax.grid()
-
-  ax = axes[2]
-  ax.plot(1/temp_range, energy_stds*temp_range, 'g')
-  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
-  ax.set_ylabel(r"$C_v/k_{{\mathrm{{B}}}}^2$")
-  ax.grid()
-
-  fig.suptitle(fr"Average energy, spin and heat capacity evolution with changing temperature $\beta$")
-  plt.show()
+  plots.avg_plot(temp_range, mean_energy, mean_spin, energy_stds)
 
 
 
 
 # config_energies, config_spins = metropolis(lattice_p.copy(), 1_000_000, B)
-# plot_energy_spin(config_energies, config_spins, B)
+# plots.plot_energy_spin(config_energies, config_spins, B)
 
-avg_energy_spin_temp(lattice_p.copy(), 1_000_000, 0.1, 2.5, 0.03)
+avg_energy_spin_temp(lattice_p.copy(), 1_000_000, 0.1, 2, 0.05)
 
 
