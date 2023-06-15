@@ -15,9 +15,10 @@ plt.style.use('seaborn-v0_8-notebook')
 
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 N = int(input("Order of the lattice: "))
+periodic = input("Use periodic boundary conditions? (y/n) ").lower()[0]
+print(periodic)
 
 lattice = np.zeros((N,N))
-
 for i in range(N):
   for j in range(N):
     lattice[i][j] = random.choice((-1,1))
@@ -40,28 +41,44 @@ lattice_p[init_random<=0.75] = 1
 @njit
 def get_energy(lattice):
   en_mat = np.zeros((N,N))
+
   for i in range(N):
     for j in range(N):
 
-      if i-1<0:
-        S_top = 0
-      else:
+      if periodic == "y":
         S_top = lattice[i-1][j]
-
-      if i+1>N-1:
-        S_bottom = 0
-      else:
-        S_bottom = lattice[i+1][j]
-
-      if j+1>N-1:
-        S_right = 0
-      else:
-        S_right = lattice[i][j+1]
-
-      if j-1<0:
-        S_left = 0
-      else:
         S_left = lattice[i][j-1]
+
+        if i+1 > N-1:
+          S_bottom = lattice[0][j]
+        else:
+          S_bottom = lattice[i+1][j]
+
+        if j+1 > N-1:
+          S_right = lattice[i][0]
+        else:
+          S_right = lattice[i][j+1]
+
+      else:
+        if i-1 < 0:
+          S_top = 0
+        else:
+          S_top = lattice[i-1][j]
+
+        if i+1 > N-1:
+          S_bottom = 0
+        else:
+          S_bottom = lattice[i+1][j]
+
+        if j+1 > N-1:
+          S_right = 0
+        else:
+          S_right = lattice[i][j+1]
+
+        if j-1 < 0:
+          S_left = 0
+        else:
+          S_left = lattice[i][j-1]
 
       en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
 
@@ -185,6 +202,6 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 # config_energies, config_spins = metropolis(lattice, 1_000_000, B)
 # plot_energy_spin(config_energies, config_spins, B)
 
-avg_energy_spin_temp(lattice, 1_000_000, 0.1, 2.5, 0.05)
+avg_energy_spin_temp(lattice, 1_000_000, 0.1, 2, 0.05)
 
 
