@@ -19,8 +19,12 @@ periodic = input("Use periodic boundary conditions? (y/n) ").lower()[0]
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 mc_steps = int(input("Set a number of Monte Carlo simulation steps: "))
 
-lattice_choice = input("Random, positive or negative spin field? (r/p/n) ").lower()[0]
-lattice = lattice_type.square_lattice(N, lattice_choice)
+lattice_order = input("Random, positive or negative spin field? (r/p/n) ").lower()[0]
+lattice_geometry = input("Square or hexagonal lattice? (s/h) ").lower()[0]
+if lattice_geometry == 's':
+  lattice = lattice_type.square_lattice(N, lattice_order)
+elif lattice_geometry == 'h':
+  lattice = lattice_type.hexagonal_lattice(N, lattice_order)
 
 # -------------------------------------------------- #
   
