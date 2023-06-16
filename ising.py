@@ -1,10 +1,11 @@
 import numpy as np
 import random
-import matplotlib.pyplot as plt
 import math
 from numba import njit
 import statistics as stat
 import graph_plot as plots
+import lattice_type
+
 
 # ----------------- INITIALIZATION ----------------- #
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
@@ -18,28 +19,9 @@ periodic = input("Use periodic boundary conditions? (y/n) ").lower()[0]
 J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
 mc_steps = int(input("Set a number of Monte Carlo simulation steps: "))
 
-init_lattice = np.zeros((N,N))
-for i in range(N):
-  for j in range(N):
-    init_lattice[i][j] = random.choice((-1,1))
-
-init_random = np.random.random((N,N))
-lattice_n = np.zeros((N,N))
-lattice_n[init_random>0.75] = 1
-lattice_n[init_random<=0.75] = -1
-
-init_random = np.random.random((N,N))
-lattice_p = np.zeros((N,N))
-lattice_p[init_random>0.75] = -1
-lattice_p[init_random<=0.75] = 1
-
 lattice_choice = input("Random, positive or negative spin field? (r/p/n) ").lower()[0]
-if lattice_choice == 'r':
-  lattice = init_lattice
-elif lattice_choice == 'p':
-  lattice = lattice_p
-elif lattice_choice == 'n':
-  lattice = lattice_n
+lattice = lattice_type.square_lattice(N, lattice_choice)
+
 # -------------------------------------------------- #
   
 
@@ -170,6 +152,7 @@ if mode_choice == 1:
   B = float(input("Value of B = 1/kT: "))
   config_energies, config_spins = metropolis(lattice.copy(), mc_steps, B)
   plots.plot_energy_spin(config_energies, config_spins, B)
+
 elif mode_choice == 2:
   avg_energy_spin_temp(lattice.copy(), mc_steps, 0.1, 2, 0.05)
 
