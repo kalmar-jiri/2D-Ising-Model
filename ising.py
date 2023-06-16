@@ -35,47 +35,76 @@ elif lattice_geometry == 'h':
 def get_energy(lattice):
   en_mat = np.zeros((N,N))
 
-  for i in range(N):
-    for j in range(N):
+  # Calculate the energy matrix for SQUARE spin lattice
+  if lattice_geometry == 's':
+    for i in range(N):
+      for j in range(N):
 
-      if periodic == "y":
-        S_top = lattice[i-1][j]
-        S_left = lattice[i][j-1]
-
-        if i+1 > N-1:
-          S_bottom = lattice[0][j]
-        else:
-          S_bottom = lattice[i+1][j]
-
-        if j+1 > N-1:
-          S_right = lattice[i][0]
-        else:
-          S_right = lattice[i][j+1]
-
-      else:
-        if i-1 < 0:
-          S_top = 0
-        else:
+        if periodic == "y":
           S_top = lattice[i-1][j]
-
-        if i+1 > N-1:
-          S_bottom = 0
-        else:
-          S_bottom = lattice[i+1][j]
-
-        if j+1 > N-1:
-          S_right = 0
-        else:
-          S_right = lattice[i][j+1]
-
-        if j-1 < 0:
-          S_left = 0
-        else:
           S_left = lattice[i][j-1]
 
-      en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
+          if i+1 > N-1:
+            S_bottom = lattice[0][j]
+          else:
+            S_bottom = lattice[i+1][j]
 
-  return 0.5*np.sum(en_mat)
+          if j+1 > N-1:
+            S_right = lattice[i][0]
+          else:
+            S_right = lattice[i][j+1]
+
+        elif periodic == "n":
+          if i-1 < 0:
+            S_top = 0
+          else:
+            S_top = lattice[i-1][j]
+
+          if i+1 > N-1:
+            S_bottom = 0
+          else:
+            S_bottom = lattice[i+1][j]
+
+          if j+1 > N-1:
+            S_right = 0
+          else:
+            S_right = lattice[i][j+1]
+
+          if j-1 < 0:
+            S_left = 0
+          else:
+            S_left = lattice[i][j-1]
+
+        en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
+
+    return 0.5*np.sum(en_mat)
+
+  # Calculate the energy matrix for HEXAGONAL spin lattice
+  elif lattice_geometry == 'h':
+    for i in range(N):
+      for j in range(N):
+
+        if periodic == 'y':
+          S_1 = lattice[i][j][1]
+          S_2 = lattice[i-1][j][1]
+          S_3 = lattice[i][j-1][1]
+
+        elif periodic == 'n':
+          S_1 = lattice[i][j][1]
+
+          if i-1 < 0:
+            S_2 = 0
+          else:
+            S_2 = lattice[i-1][j][1]
+          
+          if j-1 < 0:
+            S_3 = 0
+          else:
+            S_3 = lattice[i][j-1][1]
+
+        en_mat[i][j] = -J*lattice[i][j][0]*(S_1 + S_2 + S_3)
+
+    return np.sum(en_mat)
     
 
 # Choose a random spin site and change its spin
@@ -83,7 +112,11 @@ def get_energy(lattice):
 def change_rand_spin(lat):
   i = random.randint(0,N-1)
   j = random.randint(0,N-1)
-  lat[i][j] *= -1
+  if lattice_geometry == 's':
+    lat[i][j] *= -1
+  elif lattice_geometry == 'h':
+    k = random.randint(0,1)
+    lat[i][j][k] *= -1
 
   return lat
 
@@ -97,7 +130,10 @@ def energy_diff(lattice0, lattice1):
 # Calculate the average spin
 @njit
 def sum_spin(lattice):
-  return np.sum(lattice)/N**2
+  if lattice_geometry == 's':
+    return np.sum(lattice)/N**2
+  elif lattice_geometry == 'h':
+    return np.sum(lattice)/((N**2)*2)
 
 
 # Metropolis algorithm
