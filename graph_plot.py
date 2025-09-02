@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-
+import numpy as np
+from matplotlib.colors import ListedColormap
 
 # Save the configuration image
 def save_img(configuration, iteration):
@@ -50,3 +51,29 @@ def avg_plot(temp_range, mean_energy, mean_spin, energy_stds):
 
   fig.suptitle(fr"Average energy, spin and heat capacity evolution with changing temperature $\beta$")
   plt.show()
+
+
+def plot_snapshot(lattice, title="Configuration snapshot", filename='./snapshot.png'):
+    """
+    Plot a snapshot of the current spin configuration.
+    +1 spins are black, -1 spins are white.
+    Works for both square (N x N) and hexagonal (N x N x 2) lattices.
+    """
+    if lattice.ndim == 2:  # square lattice
+        config = lattice
+    elif lattice.ndim == 3:  # hexagonal: flatten the 2 sublattices along one axis
+        # Option 1: average the two sublattices (value between -1 and +1)
+        config = np.mean(lattice, axis=2)
+        # Option 2 (alternative): plot only one sublattice, e.g. lattice[:,:,0]
+        # config = lattice[:,:,0]
+    else:
+        raise ValueError("Lattice must be 2D (square) or 3D (hexagonal).")
+
+    cmap = ListedColormap(["black", "yellow"])  # -1 -> red, +1 -> blue
+
+    plt.figure(figsize=(6,6))
+    plt.imshow(config, cmap=cmap, interpolation="nearest", vmin=-1, vmax=1)
+    plt.title(title)
+    plt.axis("off")
+    plt.savefig(filename)
+    plt.show()

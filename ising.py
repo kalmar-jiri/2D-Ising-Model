@@ -170,14 +170,10 @@ def sum_spin(lattice):
 
 # Metropolis algorithm
 @njit
-def metropolis(lattice, steps, B):
-
-  energy = get_energy(lattice)
-  config_energies = [energy]
-  config_spins = [sum_spin(lattice)]
-
+def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
   for step in range(steps):
     if step % 100_000 == 0:
+      # This print will be redirected to the console even from a Numba function
       print(f'Working on step {step}')
 
     new_lattice = change_rand_spin(lattice.copy())
@@ -189,8 +185,23 @@ def metropolis(lattice, steps, B):
 
     config_energies.append(energy)
     config_spins.append(sum_spin(lattice))
+  
+  return config_energies, config_spins, lattice
 
-  return config_energies, config_spins
+def metropolis(lattice, steps, B):
+  energy = get_energy(lattice)
+  
+  # Using lists as they are supported by numba in nopython mode
+  config_energies = [energy]
+  config_spins = [sum_spin(lattice)]
+
+  config_energies, config_spins, lattice = _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins)
+
+  with open('simulation_data.txt', 'w') as f:
+    f.write("step   energy   spin\n")
+    for i in range(len(config_energies)):
+      f.write(f"{i:<6d} {config_energies[i]:<10.4f} {config_spins[i]:<10.4f}\n")
+  return config_energies, config_spins, lattice
 
 
 # Get the changing average energy and average spin with changing temperature
@@ -222,7 +233,9 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
 if mode_choice == 1:
   # B = float(input("Value of B = 1/kT: "))
-  config_energies, config_spins = metropolis(lattice.copy(), mc_steps, B)
+  plots.plot_snapshot(lattice, title="Initial configuration", filename='./starting-config.png')
+  config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, B)
+  plots.plot_snapshot(lattice, title="Final configuration", filename='./ending-config.png')
   plots.plot_energy_spin(config_energies, config_spins, B)
 
 elif mode_choice == 2:
