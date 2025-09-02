@@ -1,0 +1,8 @@
+NRANK = 50
+PERIODIC = .TRUE.
+J = 1.0
+MC_STEPS = 5E+5
+LATORD = Random
+LATGEO = Square
+MODE = 1
+BTEMP = 0.7

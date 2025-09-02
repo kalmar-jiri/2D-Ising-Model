@@ -8,19 +8,35 @@ import lattice_type
 
 
 # ----------------- INITIALIZATION ----------------- #
+def read_input(filename):
+    params = {}
+    with open(filename, 'r') as f:
+        for line in f:
+            line.strip()
+            if not line or line.startswith('#'):
+              continue
+            if '=' in line:
+                key, value = line.split('=', 1)
+                params[key.strip()] = value.strip()
+    
+    n = int(params['NRANK'])
+    periodic = 'y' if params['PERIODIC'] == '.TRUE.' else 'n'
+    J = float(params['J'])
+    mc_steps = int(float(params['MC_STEPS']))
+    lattice_order = params['LATORD'][0].lower()
+    lattice_geometry = params['LATGEO'][0].lower()
+    mode_choice = int(params['MODE'])
+    B = float(params['BTEMP'])
+
+    return n, periodic, J, mc_steps, lattice_order, lattice_geometry, mode_choice, B
+
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
 
 print("--------- 2D ISING MODEL ---------")
+N, periodic, J, mc_steps, lattice_order, lattice_geometry, mode_choice, B = read_input('input.dat')
 
-N = int(input("Order of the lattice: "))
-periodic = input("Use periodic boundary conditions? (y/n) ").lower()[0]
-J = int(input("Type of interaction:\nferromagnetic: 1\nantiferromagnetic: -1\n--> "))
-mc_steps = int(input("Set a number of Monte Carlo simulation steps: "))
-
-lattice_order = input("Random, positive or negative spin field? (r/p/n) ").lower()[0]
-lattice_geometry = input("Square or hexagonal lattice? (s/h) ").lower()[0]
 if lattice_geometry == 's':
   lattice = lattice_type.square_lattice(N, lattice_order)
 elif lattice_geometry == 'h':
@@ -182,14 +198,14 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
 
 
-print("---------------")
-print("Choose the mode:")
-print("1. Calculate a single energy/spin relaxation of the spin lattice\n2. Calculate the evolution of average energy, magnetization and heat capacity as a function of temperature")
-mode_choice = int(input("--> "))
-print("---------------")
+# print("---------------")
+# print("Choose the mode:")
+# print("1. Calculate a single energy/spin relaxation of the spin lattice\n2. Calculate the evolution of average energy, magnetization and heat capacity as a function of temperature")
+# mode_choice = int(input("--> "))
+# print("---------------")
 
 if mode_choice == 1:
-  B = float(input("Value of B = 1/kT: "))
+  # B = float(input("Value of B = 1/kT: "))
   config_energies, config_spins = metropolis(lattice.copy(), mc_steps, B)
   plots.plot_energy_spin(config_energies, config_spins, B)
 
