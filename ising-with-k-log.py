@@ -140,7 +140,7 @@ def get_energy(lattice):
     
 
 # Choose a random spin site and change its spin
-@njit
+# @njit
 def change_rand_spin(lat):
   i = np.random.randint(0,N)
   j = np.random.randint(0,N)
@@ -150,17 +150,17 @@ def change_rand_spin(lat):
     k = np.random.randint(0,2)
     lat[i][j][k] *= -1
 
-  return lat
+  return lat, k
 
 
 # Calculate the energy difference between two configurations
-@njit
+# @njit
 def energy_diff(lattice0, lattice1):
   return get_energy(lattice1) - get_energy(lattice0)
 
 
 # Calculate the average spin
-@njit
+# @njit
 def sum_spin(lattice):
   if lattice_geometry_flag == 0:
     return np.sum(lattice)/N**2
@@ -169,8 +169,11 @@ def sum_spin(lattice):
 
 
 # Metropolis algorithm
-@njit
+# @njit
 def metropolis(lattice, steps, B):
+
+  accepted0 = 0
+  accepted1 = 0
 
   energy = get_energy(lattice)
   config_energies = [energy]
@@ -180,15 +183,30 @@ def metropolis(lattice, steps, B):
     if step % 100_000 == 0:
       print(f'Working on step {step}')
 
-    new_lattice = change_rand_spin(lattice.copy())
+    new_lattice, k_chosen = change_rand_spin(lattice.copy())
     dE = energy_diff(lattice, new_lattice)
 
-    if dE < 0 or math.exp(-B*dE) > np.random.random():
+    if dE < 0:
       lattice = new_lattice
       energy += dE
+      if k_chosen == 0:
+        accepted0 += 1
+      else:
+        accepted1 += 1
+      
+    elif math.exp(-B*dE) > np.random.random():
+      lattice = new_lattice
+      energy += dE
+      if k_chosen == 0:
+        accepted0 += 1
+      else:
+        accepted1 += 1
 
     config_energies.append(energy)
     config_spins.append(sum_spin(lattice))
+
+  print(f'accepted 0: {accepted0}')
+  print(f'accepted 1: {accepted1}')
 
   return config_energies, config_spins
 

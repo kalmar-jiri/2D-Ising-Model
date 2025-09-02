@@ -2,16 +2,16 @@
 NRANK = 50
 
 # Periodic boundary conditions (.TRUE. / .FALSE.)
-PERIODIC = .TRUE.
+PERIODIC = .FALSE.
 
 # Exchange coupling parameter (1.0 Ferromagnetic / -1.0 Antiferromagnetic)
 J = 1.0
 
 # Number of Monte Carlo steps
-MC_STEPS = 5E+5
+MC_STEPS = 8E+5
 
 # The initial distribution of spins (Random / Positive / Negative)
-LATORD = RANDOM
+LATORD = POSITIVE
 
 # Lattice geometry (Square / Hexagonal)
 LATGEO = HEXAGONAL
@@ -20,4 +20,4 @@ LATGEO = HEXAGONAL
 MODE = 1
 
 # 1/kT in (so far) dimensionless units, ignored with MODE=2
-BTEMP = 0.7
+BTEMP = 5.0
