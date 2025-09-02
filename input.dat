@@ -8,16 +8,16 @@ PERIODIC = .TRUE.
 J = 1.0
 
 # Number of Monte Carlo steps
-MC_STEPS = 3E+5
+#MC_STEPS = 5E+5
 
 # The initial distribution of spins (Random / Positive / Negative)
-LATORD = Random
+LATORD = RANDOM
 
 # Lattice geometry (Square / Hexagonal)
-LATGEO = Square
+LATGEO = HEXAGONAL
 
 # Mode of simulation (1 = Spin/energy relaxation, 2 = Evolution of average spin/energy w/ changing temperature)
-MODE = 2
+MODE = 1
 
 # 1/kT in (so far) dimensionless units, ignored with MODE=2
-BTEMP = 0.7
+BTEMP = 1.7

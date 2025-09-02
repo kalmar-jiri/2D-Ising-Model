@@ -10,23 +10,28 @@ import lattice_type
 # ----------------- INITIALIZATION ----------------- #
 def read_input(filename):
     params = {}
-    with open(filename, 'r') as f:
-        for line in f:
-            line.strip()
-            if not line or line.startswith('#'):
-              continue
-            if '=' in line:
-                key, value = line.split('=', 1)
-                params[key.strip()] = value.strip()
-    
-    n = int(params['NRANK'])
-    periodic = 'y' if params['PERIODIC'] == '.TRUE.' else 'n'
-    J = float(params['J'])
-    mc_steps = int(float(params['MC_STEPS']))
-    lattice_order = params['LATORD'][0].lower()
-    lattice_geometry = params['LATGEO'][0].lower()
-    mode_choice = int(params['MODE'])
-    B = float(params['BTEMP'])
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    params[key.strip()] = value.strip()
+    except FileNotFoundError:
+        print(f"Warning: Input file '{filename}' not found. Using default parameters.")
+
+
+    # Each parameter has a DEFAULT value (for case if it's missing in 'input.dat')
+    n = int(params.get('NRANK', 50))
+    periodic = 'y' if params.get('PERIODIC', '.TRUE.') == '.TRUE.' else 'n'
+    J = float(params.get('J', 1.0))
+    mc_steps = int(float(params.get('MC_STEPS', 200000)))
+    lattice_order = params.get('LATORD', 'r')[0].lower()
+    lattice_geometry = params.get('LATGEO', 's')[0].lower()
+    mode_choice = int(params.get('MODE', 1))
+    B = float(params.get('BTEMP', 1.5))
 
     return n, periodic, J, mc_steps, lattice_order, lattice_geometry, mode_choice, B
 
@@ -36,6 +41,7 @@ def read_input(filename):
 
 print("--------- 2D ISING MODEL ---------")
 N, periodic, J, mc_steps, lattice_order, lattice_geometry, mode_choice, B = read_input('input.dat')
+print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nBTEMP={B}\n----------------')
 
 if lattice_geometry == 's':
   lattice = lattice_type.square_lattice(N, lattice_order)
