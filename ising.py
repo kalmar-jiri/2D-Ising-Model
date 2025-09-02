@@ -188,6 +188,7 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
   temp_range = np.arange(init_temp, final_temp, temp_step)
 
   for temp in temp_range:
+    print(f'Calculating temperature B = {temp:.2f}')
     config_energies, config_spins = metropolis(lattice, metro_steps, temp)
 
     mean_energy.append(stat.mean(config_energies[-100000:]))

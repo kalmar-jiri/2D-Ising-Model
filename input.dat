@@ -1,8 +1,23 @@
+# The order of the matrix
 NRANK = 50
+
+# Periodic boundary conditions (.TRUE. / .FALSE.)
 PERIODIC = .TRUE.
+
+# Exchange coupling parameter (1.0 Ferromagnetic / -1.0 Antiferromagnetic)
 J = 1.0
-MC_STEPS = 5E+5
+
+# Number of Monte Carlo steps
+MC_STEPS = 3E+5
+
+# The initial distribution of spins (Random / Positive / Negative)
 LATORD = Random
+
+# Lattice geometry (Square / Hexagonal)
 LATGEO = Square
-MODE = 1
+
+# Mode of simulation (1 = Spin/energy relaxation, 2 = Evolution of average spin/energy w/ changing temperature)
+MODE = 2
+
+# 1/kT in (so far) dimensionless units, ignored with MODE=2
 BTEMP = 0.7
