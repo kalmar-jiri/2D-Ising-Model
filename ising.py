@@ -166,7 +166,10 @@ def metropolis(lattice, steps, B):
   config_energies = [energy]
   config_spins = [sum_spin(lattice)]
 
-  for _ in range(steps):
+  for step in range(steps):
+    if step % 100_000 == 0:
+      print(f'Working on step {step}')
+
     new_lattice = change_rand_spin(lattice.copy())
     dE = energy_diff(lattice, new_lattice)
 

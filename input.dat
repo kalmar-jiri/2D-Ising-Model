@@ -8,7 +8,7 @@ PERIODIC = .TRUE.
 J = 1.0
 
 # Number of Monte Carlo steps
-#MC_STEPS = 5E+5
+MC_STEPS = 5E+5
 
 # The initial distribution of spins (Random / Positive / Negative)
 LATORD = RANDOM
@@ -20,4 +20,4 @@ LATGEO = HEXAGONAL
 MODE = 1
 
 # 1/kT in (so far) dimensionless units, ignored with MODE=2
-BTEMP = 1.7
+BTEMP = 0.7
