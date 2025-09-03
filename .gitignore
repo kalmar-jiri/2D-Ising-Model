@@ -10,7 +10,7 @@ __pycache__/
 configs/
 energy.csv
 energy.png
-*.png
+# *.png
 
 # C extensions
 *.so

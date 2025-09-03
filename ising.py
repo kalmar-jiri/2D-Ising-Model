@@ -170,7 +170,7 @@ def get_neighbor_sum(lattice, i, j, k):
 # Metropolis algorithm
 @njit
 def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
-  """Main Metropolis algorithm loop. Creates a new configuration and then either accepts it or rejects it. Returns array of energies, array of average spins in each step and the final configuration for the plot."""
+  """Main Metropolis algorithm loop. Picks a random spin on the lattice, sums up the spins of its neighbors, and calculates the change in energy that would occur if the chosen spin was flipped. Based on the energy change, lattice is either kept the same or changed into the new configuration. Returns array of energies, array of average spins in each step and the final configuration for the plot."""
   for step in range(steps):
     if step % 100_000 == 0:
       # This print will be redirected to the console even from a Numba function
@@ -184,7 +184,8 @@ def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
 
     # Get a sum of its neighbors
     neighbor_sum = get_neighbor_sum(lattice, i, j, k)
-    # Calculates the PROSPECTIVE ENERGY DIFFERENCE
+
+    # Calculation of the PROSPECTIVE ENERGY DIFFERENCE (dE)
     # that would occur if the spin were to be flipped
     # The local energy contribution of a single spin S_i interacting with its neighbors S_j is:
     # E_0 = -J * S_i * sum(S_j)
@@ -227,7 +228,7 @@ def metropolis(lattice, steps, B):
   return config_energies, config_spins, lattice
 
 
-def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step):
+def avg_energy_spin_temp(lattice, mc_steps, init_temp, final_temp, temp_step):
   """Loops over temperature range and runs the Metropolis algorithm in each step. For each step, the mean energy, mean spin, and the energy standard deviation for the LAST 10 000 steps is saved. These variables are used for plotting at the end."""
   mean_energy = []
   energy_stds = []
@@ -237,7 +238,7 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
 
   for temp in temp_range:
     print(f'Calculating temperature B = {temp:.2f}')
-    config_energies, config_spins = metropolis(lattice.copy(), metro_steps, temp)
+    config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, temp)
 
     mean_energy.append(stat.mean(config_energies[-100000:]))
     energy_stds.append(stat.stdev(config_energies[-100000:]))
@@ -246,7 +247,6 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
   plots.avg_plot(temp_range, mean_energy, mean_spin, energy_stds)
 
 if mode_choice == 1:
-  # B = float(input("Value of B = 1/kT: "))
   plots.plot_snapshot(lattice, title="Initial configuration", filename='./starting-config.png')
   config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, B)
   plots.plot_snapshot(lattice, title="Final configuration", filename='./ending-config.png')
