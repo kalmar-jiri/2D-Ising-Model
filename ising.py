@@ -13,8 +13,8 @@ import read_input
 # B = 1/(k*T)
 
 print("--------- 2D ISING MODEL ---------")
-N, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, B = read_input.read_input('input.dat')
-print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nBTEMP={B}\n----------------')
+N, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, B, file_write = read_input.read_input('input.dat')
+print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
 
 # changing to boolean values so that Numba doesn't fall into "object mode"
 periodic_flag = 1 if periodic == 'y' else 0
@@ -108,27 +108,6 @@ def get_energy(lattice):
         en_mat[i][j] = -J*lattice[i][j][0]*(S_1 + S_2 + S_3)
 
     return np.sum(en_mat)
-    
-
-@njit
-def change_rand_spin(lat):
-  """Chooses a random spin site and flips its spin"""
-  i = np.random.randint(0,N)
-  j = np.random.randint(0,N)
-  if lattice_geometry_flag == 0:
-    lat[i][j] *= -1
-  elif lattice_geometry_flag == 1:
-    k = np.random.randint(0,2)
-    lat[i][j][k] *= -1
-
-  return lat
-
-
-# Calculate the energy difference between two configurations
-@njit
-def energy_diff(lattice0, lattice1):
-  return get_energy(lattice1) - get_energy(lattice0)
-
 
 @njit
 def sum_spin(lattice):
@@ -137,6 +116,55 @@ def sum_spin(lattice):
     return np.sum(lattice)/N**2
   elif lattice_geometry_flag == 1:
     return np.sum(lattice)/((N**2)*2)
+  
+
+@njit
+def get_neighbor_sum(lattice, i, j, k):
+  """Calculates the sum of neighboring spins for a given state"""
+  # --- SQUARE LATTICE ---
+  if lattice_geometry_flag == 0:
+    # Periodic boundary conditions
+    if periodic_flag == 1:
+      S_top = lattice[(i - 1) % N, j]
+      S_bottom = lattice[(i + 1) % N, j]
+      S_left = lattice[i, (j - 1) % N]
+      S_right = lattice[i, (j + 1) % N]
+    # Non-periodic boundary conditions
+    else:
+      S_top = lattice[i - 1, j] if i > 0 else 0
+      S_bottom = lattice[i + 1, j] if i < N - 1 else 0
+      S_left = lattice[i, j - 1] if j > 0 else 0
+      S_right = lattice[i, j + 1] if j < N - 1 else 0
+    return S_top + S_bottom + S_left + S_right
+  
+  # --- HEXAGONAL LATTICE ---
+  elif lattice_geometry_flag == 1:
+    neighbor_sublattice = 1 - k
+    # Neighbors of spin (i,j,0) are on sublattice 1
+    if k == 0:
+      # Periodic boundary conditions
+      if periodic_flag == 1:
+        S_1 = lattice[i, j, neighbor_sublattice]
+        S_2 = lattice[(i - 1) % N, j, neighbor_sublattice]
+        S_3 = lattice[i, (j - 1) % N, neighbor_sublattice]
+      else:
+      # Non-periodic boundary conditions
+        S_1 = lattice[i, j, neighbor_sublattice]
+        S_2 = lattice[(i - 1) % N, j, neighbor_sublattice] if i > 0 else 0
+        S_3 = lattice[i, (j - 1) % N, neighbor_sublattice] if j > 0 else 0
+    # Neighbors of spin (i,j,1) are on sublattice 0
+    elif k == 1:
+      # Periodic boundary conditions
+      if periodic_flag == 1:
+        S_1 = lattice[i, j, neighbor_sublattice]
+        S_2 = lattice[(i + 1) % N, j, neighbor_sublattice]
+        S_3 = lattice[i, (j + 1) % N, neighbor_sublattice]
+      else:
+      # Non-periodic boundary conditions
+        S_1 = lattice[i, j, neighbor_sublattice]
+        S_2 = lattice[(i + 1) % N, j, neighbor_sublattice] if i > 0 else 0
+        S_3 = lattice[i, (j + 1) % N, neighbor_sublattice] if j > 0 else 0
+    return S_1 + S_2 + S_3
 
 
 # Metropolis algorithm
@@ -148,11 +176,32 @@ def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
       # This print will be redirected to the console even from a Numba function
       print(f'Working on step {step}')
 
-    new_lattice = change_rand_spin(lattice.copy())
-    dE = energy_diff(lattice, new_lattice)
+    # Choose a random spin on the lattice
+    i = np.random.randint(0,N)
+    j = np.random.randint(0,N)
+    k = np.random.randint(0, 2) if lattice_geometry_flag == 1 else 0
+    spin = lattice[i, j, k] if lattice_geometry_flag == 1 else lattice[i, j]
+
+    # Get a sum of its neighbors
+    neighbor_sum = get_neighbor_sum(lattice, i, j, k)
+    # Calculates the PROSPECTIVE ENERGY DIFFERENCE
+    # that would occur if the spin were to be flipped
+    # The local energy contribution of a single spin S_i interacting with its neighbors S_j is:
+    # E_0 = -J * S_i * sum(S_j)
+    # If we flip the spin, its new value becomes -S_i. The local energy would be:
+    # E_1 = -J * (-S_i) * sum(S_j) = +J * S_i * sum(S_j)
+    # If we calculate dE = E_1 - E_0 we get:
+    # dE = 2 * J * S_i * sum(S_j)
+    #
+    # For us, S_i = spin and sum(S_j) = neighbor_sum
+    # this way, we do not need to modify the lattice before we know whether we will be accepting it
+    dE = 2 * J * spin * neighbor_sum
 
     if dE < 0 or math.exp(-B*dE) > np.random.random():
-      lattice = new_lattice
+      if lattice_geometry_flag == 1:
+        lattice[i, j, k] *= -1
+      else:
+        lattice[i, j] *= -1
       energy += dE
 
     config_energies.append(energy)
@@ -170,10 +219,11 @@ def metropolis(lattice, steps, B):
 
   config_energies, config_spins, lattice = _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins)
 
-  with open('simulation_data.txt', 'w') as f:
-    f.write("step   energy   spin\n")
-    for i in range(len(config_energies)):
-      f.write(f"{i:<6d} {config_energies[i]:<10.4f} {config_spins[i]:<10.4f}\n")
+  if file_write == '.TRUE.':
+    with open('simulation_data.txt', 'w') as f:
+      f.write("step   energy   spin\n")
+      for i in range(len(config_energies)):
+        f.write(f"{i:<6d} {config_energies[i]:<10.4f} {config_spins[i]:<10.4f}\n")
   return config_energies, config_spins, lattice
 
 

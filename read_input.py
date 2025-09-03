@@ -24,5 +24,6 @@ def read_input(filename):
     lattice_geometry = params.get('LATGEO', 's')[0].lower()
     mode_choice = int(params.get('MODE', 1))
     B = float(params.get('BTEMP', 1.5))
+    write_file = params.get('FILE_WRT', '.FALSE.')
 
-    return n, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, B
+    return n, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, B, write_file

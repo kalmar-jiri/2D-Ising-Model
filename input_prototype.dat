@@ -24,3 +24,6 @@ MODE = 1
 
 # 1/kT in (so far) dimensionless units, ignored with MODE=2
 BTEMP = 1.2
+
+# Determines whether the energies and average spins are written into datafile
+FILE_WRT = .FALSE.
