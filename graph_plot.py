@@ -12,6 +12,7 @@ def save_img(configuration, iteration):
 
 # Make an energy/steps plot
 def plot_energy_spin(config_energies, config_spins, B):
+  """Plotting the evolution of the total energy and the average spin of the configuration with Monte Carlo steps at a given temperature 1/B."""
   fig, axes = plt.subplots(1, 2, figsize=(12, 6))
   ax = axes[0]
   ax.plot(config_energies, 'b')
@@ -29,6 +30,7 @@ def plot_energy_spin(config_energies, config_spins, B):
 
 
 def avg_plot(temp_range, mean_energy, mean_spin, energy_stds):
+  """Plotting the average energy, average spin and energy standard deviation of the last 10 000 steps of the simulation with changing temperature 1/B."""
   fig, axes = plt.subplots(1, 3, figsize=(18, 6))
   ax = axes[0]
   ax.plot(1/temp_range, mean_energy, 'b')
@@ -56,7 +58,7 @@ def avg_plot(temp_range, mean_energy, mean_spin, energy_stds):
 def plot_snapshot(lattice, title="Configuration snapshot", filename='./snapshot.png', show_plot=True):
     """
     Plot a snapshot of the current spin configuration.
-    +1 spins are black, -1 spins are white.
+    +1 spins are yellow, -1 spins are black.
     Works for both square (N x N) and hexagonal (N x N x 2) lattices.
     """
     if lattice.ndim == 2:  # square lattice

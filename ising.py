@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import math
 from numba import njit
 import statistics as stat
@@ -9,6 +8,7 @@ import lattice_type
 
 # ----------------- INITIALIZATION ----------------- #
 def read_input(filename):
+    """Function that reads the input.dat file. The file uses a precise keywords, similar to INCAR keywords in VASP. Each keyword has a default value so they can be omitted. If the input file is missing then a default value is set for every property."""
     params = {}
     try:
         with open(filename, 'r') as f:
@@ -54,11 +54,9 @@ elif lattice_geometry == 'h':
 
 # -------------------------------------------------- #
   
-
-# Calculate energies of sites based on their nearest neighbors
-# and calculate the energy of the configuration
 @njit
 def get_energy(lattice):
+  """Calculates energies of sites based on their nearest neighbors and then calculates the energy of the entire configuration"""
   en_mat = np.zeros((N,N))
 
   # Calculate the energy matrix for SQUARE spin lattice
@@ -139,9 +137,9 @@ def get_energy(lattice):
     return np.sum(en_mat)
     
 
-# Choose a random spin site and change its spin
 @njit
 def change_rand_spin(lat):
+  """Chooses a random spin site and flips its spin"""
   i = np.random.randint(0,N)
   j = np.random.randint(0,N)
   if lattice_geometry_flag == 0:
@@ -159,9 +157,9 @@ def energy_diff(lattice0, lattice1):
   return get_energy(lattice1) - get_energy(lattice0)
 
 
-# Calculate the average spin
 @njit
 def sum_spin(lattice):
+  """Calculates the average spin of the configuration"""
   if lattice_geometry_flag == 0:
     return np.sum(lattice)/N**2
   elif lattice_geometry_flag == 1:
@@ -171,6 +169,7 @@ def sum_spin(lattice):
 # Metropolis algorithm
 @njit
 def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
+  """Main Metropolis algorithm loop. Creates a new configuration and then either accepts it or rejects it. Returns array of energies, array of average spins in each step and the final configuration for the plot."""
   for step in range(steps):
     if step % 100_000 == 0:
       # This print will be redirected to the console even from a Numba function
@@ -189,6 +188,7 @@ def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
   return config_energies, config_spins, lattice
 
 def metropolis(lattice, steps, B):
+  """Wrapper for the Metropois algorithm loop. Initializes arrays of energies and spins. After the loop, energies and spins are written into a data file. Returns same variables as _metropolis_loop for plotting purposes."""
   energy = get_energy(lattice)
   
   # Using lists as they are supported by numba in nopython mode
@@ -207,6 +207,7 @@ def metropolis(lattice, steps, B):
 # Get the changing average energy and average spin with changing temperature
 # And plot the evolution
 def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step):
+  """Loops over temperature range and runs the Metropolis algorithm in each step. For each step, the mean energy, mean spin, and the energy standard deviation for the LAST 10 000 steps is saved. These variables are used for plotting at the end."""
   mean_energy = []
   energy_stds = []
   mean_spin = []
