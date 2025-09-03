@@ -4,53 +4,26 @@ from numba import njit
 import statistics as stat
 import graph_plot as plots
 import lattice_type
+import read_input
 
 
 # ----------------- INITIALIZATION ----------------- #
-def read_input(filename):
-    """Function that reads the input.dat file. The file uses a precise keywords, similar to INCAR keywords in VASP. Each keyword has a default value so they can be omitted. If the input file is missing then a default value is set for every property."""
-    params = {}
-    try:
-        with open(filename, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                if '=' in line:
-                    key, value = line.split('=', 1)
-                    params[key.strip()] = value.strip()
-    except FileNotFoundError:
-        print(f"Warning: Input file '{filename}' not found. Using default parameters.")
-
-
-    # Each parameter has a DEFAULT value (for case if it's missing in 'input.dat')
-    n = int(params.get('NRANK', 50))
-    periodic = 'y' if params.get('PERIODIC', '.TRUE.') == '.TRUE.' else 'n'
-    J = float(params.get('J', 1.0))
-    mc_steps = int(float(params.get('MC_STEPS', 200000)))
-    lattice_order = params.get('LATORD', 'r')[0].lower()
-    lattice_geometry = params.get('LATGEO', 's')[0].lower()
-    mode_choice = int(params.get('MODE', 1))
-    B = float(params.get('BTEMP', 1.5))
-
-    return n, periodic, J, mc_steps, lattice_order, lattice_geometry, mode_choice, B
-
 # k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
 
 print("--------- 2D ISING MODEL ---------")
-N, periodic, J, mc_steps, lattice_order, lattice_geometry, mode_choice, B = read_input('input.dat')
-print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nBTEMP={B}\n----------------')
+N, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, B = read_input.read_input('input.dat')
+print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nBTEMP={B}\n----------------')
 
 # changing to boolean values so that Numba doesn't fall into "object mode"
 periodic_flag = 1 if periodic == 'y' else 0
 lattice_geometry_flag = 0 if lattice_geometry == 's' else 1 # square=0, hex=1
 
 if lattice_geometry == 's':
-  lattice = lattice_type.square_lattice(N, lattice_order)
+  lattice = lattice_type.square_lattice(N, lattice_order, distribution_bias)
 elif lattice_geometry == 'h':
-  lattice = lattice_type.hexagonal_lattice(N, lattice_order)
+  lattice = lattice_type.hexagonal_lattice(N, lattice_order, distribution_bias)
 
 # -------------------------------------------------- #
   
@@ -204,8 +177,6 @@ def metropolis(lattice, steps, B):
   return config_energies, config_spins, lattice
 
 
-# Get the changing average energy and average spin with changing temperature
-# And plot the evolution
 def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step):
   """Loops over temperature range and runs the Metropolis algorithm in each step. For each step, the mean energy, mean spin, and the energy standard deviation for the LAST 10 000 steps is saved. These variables are used for plotting at the end."""
   mean_energy = []
@@ -223,14 +194,6 @@ def avg_energy_spin_temp(lattice, metro_steps, init_temp, final_temp, temp_step)
     mean_spin.append(stat.mean(config_spins[-100000:]))
 
   plots.avg_plot(temp_range, mean_energy, mean_spin, energy_stds)
-
-
-
-# print("---------------")
-# print("Choose the mode:")
-# print("1. Calculate a single energy/spin relaxation of the spin lattice\n2. Calculate the evolution of average energy, magnetization and heat capacity as a function of temperature")
-# mode_choice = int(input("--> "))
-# print("---------------")
 
 if mode_choice == 1:
   # B = float(input("Value of B = 1/kT: "))
