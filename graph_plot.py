@@ -63,11 +63,14 @@ def plot_snapshot(lattice, title="Configuration snapshot", filename='./snapshot.
     """
     if lattice.ndim == 2:  # square lattice
         config = lattice
-    elif lattice.ndim == 3:  # hexagonal: flatten the 2 sublattices along one axis
+    elif lattice.ndim == 3:  # hexagonal
         # Option 1: average the two sublattices (value between -1 and +1)
-        config = np.mean(lattice, axis=2)
-        # Option 2 (alternative): plot only one sublattice, e.g. lattice[:,:,0]
-        # config = lattice[:,:,0]
+        # config = np.mean(lattice, axis=2)
+        N = lattice.shape[0]
+        # Create a 2N x N array to display both sublattices interleaved
+        config = np.zeros((N, 2 * N))
+        config[:, ::2] = lattice[:, :, 0]  # Sublattice A on even columns
+        config[:, 1::2] = lattice[:, :, 1] # Sublattice B on odd columns
     else:
         raise ValueError("Lattice must be 2D (square) or 3D (hexagonal).")
 
