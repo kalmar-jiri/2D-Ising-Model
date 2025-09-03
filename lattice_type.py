@@ -11,14 +11,14 @@ def square_lattice(N, order):
     elif order == 'p':
         init_random = np.random.random((N,N))
         lattice = np.zeros((N,N))
-        lattice[init_random>0.75] = -1
-        lattice[init_random<=0.75] = 1
+        lattice[init_random>0.60] = -1
+        lattice[init_random<=0.60] = 1
         return lattice
     elif order == 'n':
         init_random = np.random.random((N,N))
         lattice = np.zeros((N,N))
-        lattice[init_random>0.75] = 1
-        lattice[init_random<=0.75] = -1
+        lattice[init_random>0.60] = 1
+        lattice[init_random<=0.60] = -1
         return lattice
     
 

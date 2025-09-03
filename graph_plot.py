@@ -53,7 +53,7 @@ def avg_plot(temp_range, mean_energy, mean_spin, energy_stds):
   plt.show()
 
 
-def plot_snapshot(lattice, title="Configuration snapshot", filename='./snapshot.png'):
+def plot_snapshot(lattice, title="Configuration snapshot", filename='./snapshot.png', show_plot=True):
     """
     Plot a snapshot of the current spin configuration.
     +1 spins are black, -1 spins are white.
@@ -76,4 +76,5 @@ def plot_snapshot(lattice, title="Configuration snapshot", filename='./snapshot.
     plt.title(title)
     plt.axis("off")
     plt.savefig(filename)
-    plt.show()
+    if show_plot:
+      plt.show()
