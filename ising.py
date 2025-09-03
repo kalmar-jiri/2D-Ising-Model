@@ -13,8 +13,8 @@ import read_input
 # B = 1/(k*T)
 
 print("--------- 2D ISING MODEL ---------")
-N, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, B, file_write = read_input.read_input('input.dat')
-print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
+N, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, file_write = read_input.read_input('input.dat')
+print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nANNEAL={annealing_mode}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
 
 # changing to boolean values so that Numba doesn't fall into "object mode"
 periodic_flag = 1 if periodic == 'y' else 0
@@ -232,9 +232,17 @@ def avg_energy_spin_temp(lattice, mc_steps, init_temp, final_temp, temp_step):
 
   temp_range = np.arange(init_temp, final_temp, temp_step)
 
+  initial_lattice = lattice.copy() # Save for non-annealing mode
+
   for temp in temp_range:
     print(f'Calculating temperature B = {temp:.2f}')
-    config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, temp)
+
+    if annealing_mode == '.TRUE.':
+      # For annealing mode, the final structure of one temperature is passed into another temperature
+      # Simulates continuous heating of the material starting from low temperatures and steadily increasing it
+      config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, temp)
+    else:
+      config_energies, config_spins, final_lattice = metropolis(initial_lattice.copy(), mc_steps, temp)
 
     mean_energy.append(stat.mean(config_energies[-100000:]))
     energy_stds.append(stat.stdev(config_energies[-100000:]))
@@ -249,5 +257,5 @@ if mode_choice == 1:
   plots.plot_energy_spin(config_energies, config_spins, B)
 
 elif mode_choice == 2:
-  avg_energy_spin_temp(lattice.copy(), mc_steps, 0.1, 2, 0.01)
+  avg_energy_spin_temp(lattice.copy(), mc_steps, 2, 0.1-0.05, -0.05)
 

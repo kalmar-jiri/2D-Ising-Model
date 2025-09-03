@@ -22,6 +22,9 @@ LATGEO = HEXAGONAL
 # Mode of simulation (1 = Spin/energy relaxation, 2 = Evolution of average spin/energy w/ changing temperature)
 MODE = 1
 
+# Turns on annealing mode for MODE=2. Final lattice configuration of the n-th run is passed as the initial configuration of the (n+1)-th run
+ANNEAL = .TRUE.
+
 # 1/kT in (so far) dimensionless units, ignored with MODE=2
 BTEMP = 1.2
 
