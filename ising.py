@@ -110,15 +110,6 @@ def get_energy(lattice):
     return np.sum(en_mat)
 
 @njit
-def sum_spin(lattice):
-  """Calculates the average spin of the configuration"""
-  if lattice_geometry_flag == 0:
-    return np.sum(lattice)/N**2
-  elif lattice_geometry_flag == 1:
-    return np.sum(lattice)/((N**2)*2)
-  
-
-@njit
 def get_neighbor_sum(lattice, i, j, k):
   """Calculates the sum of neighboring spins for a given state"""
   # --- SQUARE LATTICE ---
@@ -169,9 +160,9 @@ def get_neighbor_sum(lattice, i, j, k):
 
 # Metropolis algorithm
 @njit
-def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
+def _metropolis_loop(lattice, steps, B, energy, total_spin, config_energies, config_spins):
   """Main Metropolis algorithm loop. Picks a random spin on the lattice, sums up the spins of its neighbors, and calculates the change in energy that would occur if the chosen spin was flipped. Based on the energy change, lattice is either kept the same or changed into the new configuration. Returns array of energies, array of average spins in each step and the final configuration for the plot."""
-  for step in range(steps):
+  for step in range(steps + 1):
     if step % 100_000 == 0:
       # This print will be redirected to the console even from a Numba function
       print(f'Working on step {step}')
@@ -203,22 +194,27 @@ def _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins):
         lattice[i, j, k] *= -1
       else:
         lattice[i, j] *= -1
-      energy += dE
+      energy += dE # Update the total energy
+      total_spin += -2 * spin # Update the total spin
+      # S_0 = S  and  S_1 = -S
+      # S_1 - S_0 = -S - S = -2*S
 
     config_energies.append(energy)
-    config_spins.append(sum_spin(lattice))
+    config_spins.append(total_spin / lattice.size)
   
   return config_energies, config_spins, lattice
 
 def metropolis(lattice, steps, B):
   """Wrapper for the Metropois algorithm loop. Initializes arrays of energies and spins. After the loop, energies and spins are written into a data file. Returns same variables as _metropolis_loop for plotting purposes."""
+  # Calculate the total energy and the total spin of the lattice only ONCE before the loop
   energy = get_energy(lattice)
+  initial_total_spin = np.sum(lattice)
   
   # Using lists as they are supported by numba in nopython mode
   config_energies = [energy]
-  config_spins = [sum_spin(lattice)]
+  config_spins = [initial_total_spin / lattice.size] # Spins are normalized
 
-  config_energies, config_spins, lattice = _metropolis_loop(lattice, steps, B, energy, config_energies, config_spins)
+  config_energies, config_spins, lattice = _metropolis_loop(lattice, steps, B, energy, initial_total_spin, config_energies, config_spins)
 
   if file_write == '.TRUE.':
     with open('simulation_data.txt', 'w') as f:
@@ -253,5 +249,5 @@ if mode_choice == 1:
   plots.plot_energy_spin(config_energies, config_spins, B)
 
 elif mode_choice == 2:
-  avg_energy_spin_temp(lattice.copy(), mc_steps, 0.1, 2, 0.05)
+  avg_energy_spin_temp(lattice.copy(), mc_steps, 0.1, 2, 0.01)
 
