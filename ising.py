@@ -8,7 +8,7 @@ import read_input
 
 
 # ----------------- INITIALIZATION ----------------- #
-# k = 1.380649e-23 #m^2 * kg * s^-2 * K^-1
+k_B = 0.0861733 # meV/K
 # T = int(input("Temperature [K]: "))
 # B = 1/(k*T)
 
@@ -203,7 +203,7 @@ def get_energy(lattice):
 def _metropolis_loop(lattice, steps, B, energy, total_spin, config_energies, config_spins):
   """Main Metropolis algorithm loop. Picks a random spin on the lattice, sums up the spins of its neighbors, and calculates the change in energy that would occur if the chosen spin was flipped. Based on the energy change, lattice is either kept the same or changed into the new configuration. Returns array of energies, array of average spins in each step and the final configuration for the plot."""
   for step in range(steps):
-    if step % 100_000 == 0:
+    if mode_choice == 1 and step % 100_000 == 0:
       # This print will be redirected to the console even from a Numba function
       print(f'Working on step {step}')
 
@@ -264,31 +264,37 @@ def metropolis(lattice, steps, B):
   return config_energies, config_spins, lattice
 
 
-def avg_energy_spin_temp(lattice, mc_steps, init_temp, final_temp, temp_step):
+def avg_energy_spin_temp(lattice, mc_steps, start_temp_K, end_temp_K, step_temp_K):
   """Loops over temperature range and runs the Metropolis algorithm in each step. For each step, the mean energy, mean spin, and the energy standard deviation for the LAST 10 000 steps is saved. These variables are used for plotting at the end."""
   mean_energy = []
   energy_stds = []
   mean_spin = []
 
-  temp_range = np.arange(init_temp, final_temp, temp_step)
+  temp_range_K = np.arange(start_temp_K, end_temp_K, step_temp_K)
+
+  # Ensure we don't divide by zero if starting at 0 K
+  if temp_range_K[0] == 0:
+    temp_range_K[0] = 1e-9
 
   initial_lattice = lattice.copy() # Save for non-annealing mode
 
-  for temp in temp_range:
-    print(f'Calculating temperature B = {temp:.2f}')
+  for T_kelvin in temp_range_K:
+    B = 1.0 / (k_B * T_kelvin)
+    # print(f'Calculating temperature B = {temp:.2f}')
+    print(f'Calculating temperature T = {T_kelvin:.2f} K (B = {B:.2f})')
 
     if annealing_mode == '.TRUE.':
       # For annealing mode, the final structure of one temperature is passed into another temperature
       # Simulates continuous heating of the material starting from low temperatures and steadily increasing it
-      config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, temp)
+      config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, B)
     else:
-      config_energies, config_spins, final_lattice = metropolis(initial_lattice.copy(), mc_steps, temp)
+      config_energies, config_spins, final_lattice = metropolis(initial_lattice.copy(), mc_steps, B)
 
     mean_energy.append(stat.mean(config_energies[-100000:]))
     energy_stds.append(stat.stdev(config_energies[-100000:]))
     mean_spin.append(stat.mean(config_spins[-100000:]))
 
-  plots.avg_plot(temp_range, mean_energy, mean_spin, energy_stds)
+  plots.avg_plot(temp_range_K, mean_energy, mean_spin, energy_stds)
 
 if mode_choice == 1:
   plots.plot_snapshot(lattice, title="Initial configuration", filename='./starting-config.png')
@@ -297,5 +303,4 @@ if mode_choice == 1:
   plots.plot_energy_spin(config_energies, config_spins, B)
 
 elif mode_choice == 2:
-  avg_energy_spin_temp(lattice.copy(), mc_steps, 2, 0.1-0.05, -0.05)
-
+  avg_energy_spin_temp(lattice.copy(), mc_steps, 0.0, 1005.0, 5.0)
