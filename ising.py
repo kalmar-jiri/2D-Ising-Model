@@ -303,7 +303,7 @@ if mode_choice == 1:
   B = 1.0 / (k_B * temp_K)
   config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, B)
   plots.plot_snapshot(lattice, title="Final configuration", filename='./ending-config.png')
-  plots.plot_energy_spin(config_energies, config_spins, B)
+  plots.plot_energy_spin(config_energies, config_spins, B, temp_K)
 
 elif mode_choice == 2:
   avg_energy_spin_temp(lattice.copy(), mc_steps, start_temp_K, end_temp_K + step_temp_K, step_temp_K)

@@ -11,7 +11,7 @@ def save_img(configuration, iteration):
 
 
 # Make an energy/steps plot
-def plot_energy_spin(config_energies, config_spins, B):
+def plot_energy_spin(config_energies, config_spins, B, temp_K):
   """Plotting the evolution of the total energy and the average spin of the configuration with Monte Carlo steps at a given temperature 1/B."""
   fig, axes = plt.subplots(1, 2, figsize=(12, 6))
   ax = axes[0]
@@ -25,7 +25,7 @@ def plot_energy_spin(config_energies, config_spins, B):
   ax.set_ylabel(r"Average spin $\bar{m}$")
   ax.set_ylim([-1.1,1.1]) 
   ax.grid()
-  fig.suptitle(fr"Evolution of average energy and spin for $\beta={B}$")
+  fig.suptitle(fr"Evolution of average energy and spin for $T={temp_K}$ K")
   plt.show()
 
 
@@ -34,20 +34,20 @@ def avg_plot(temp_range_K, mean_energy, mean_spin, energy_stds):
   fig, axes = plt.subplots(1, 3, figsize=(18, 6))
   ax = axes[0]
   ax.plot(temp_range_K, mean_energy, 'b')
-  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  ax.set_xlabel(fr"Temperature [K]")
   ax.set_ylabel("Average Energy")
   ax.grid()
 
   ax = axes[1]
   ax.plot(temp_range_K, mean_spin, 'r')
-  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  ax.set_xlabel(fr"Temperature [K]")
   ax.set_ylabel(r"Average spin $\bar{m}$")
   ax.set_ylim([-1.1,1.1]) 
   ax.grid()
 
   ax = axes[2]
   ax.plot(temp_range_K, energy_stds*temp_range_K, 'g')
-  ax.set_xlabel(fr"Temperature [$k_{{\mathrm{{B}}}}T$]")
+  ax.set_xlabel(fr"Temperature [K]")
   ax.set_ylabel(r"$C_v/k_{{\mathrm{{B}}}}^2$")
   ax.grid()
 
