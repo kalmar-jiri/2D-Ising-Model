@@ -36,45 +36,40 @@ def get_energy(lattice):
   if lattice_geometry_flag == 0:
     for i in range(N):
       for j in range(N):
-        i_top = (i - 1) % N
-        i_bottom = (i + 1) % N
-        j_left = (j - 1) % N
-        j_right = (j + 1) % N
-
         if periodic_flag == 1:
-          S_top = lattice[i_top][j]
-          S_left = lattice[i][j_left]
+          S_top = lattice[(i - 1) % N][j]
+          S_left = lattice[i][(j - 1) % N]
 
           if i+1 > N-1:
             S_bottom = lattice[0][j]
           else:
-            S_bottom = lattice[i_bottom][j]
+            S_bottom = lattice[(i + 1) % N][j]
 
           if j+1 > N-1:
             S_right = lattice[i][0]
           else:
-            S_right = lattice[i][j_right]
+            S_right = lattice[i][(j + 1) % N]
 
         elif periodic_flag == 0:
           if i-1 < 0:
             S_top = 0
           else:
-            S_top = lattice[i_top][j]
+            S_top = lattice[(i - 1) % N][j]
 
           if i+1 > N-1:
             S_bottom = 0
           else:
-            S_bottom = lattice[i_bottom][j]
+            S_bottom = lattice[(i + 1) % N][j]
 
           if j+1 > N-1:
             S_right = 0
           else:
-            S_right = lattice[i][j_right]
+            S_right = lattice[i][(j + 1) % N]
 
           if j-1 < 0:
             S_left = 0
           else:
-            S_left = lattice[i][j_left]
+            S_left = lattice[i][(j - 1) % N]
 
         en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
 
@@ -84,13 +79,10 @@ def get_energy(lattice):
   elif lattice_geometry_flag == 1:
     for i in range(N):
       for j in range(N):
-        i_neigh = (i - 1) % N
-        j_neigh = (j - 1) % N
-
         if periodic_flag == 1:
           S_1 = lattice[i][j][1]
-          S_2 = lattice[i_neigh][j][1]
-          S_3 = lattice[i][j_neigh][1]
+          S_2 = lattice[(i - 1) % N][j][1]
+          S_3 = lattice[i][(j - 1) % N][1]
 
         elif periodic_flag == 0:
           S_1 = lattice[i][j][1]
@@ -98,12 +90,12 @@ def get_energy(lattice):
           if i-1 < 0:
             S_2 = 0
           else:
-            S_2 = lattice[i_neigh][j][1]
+            S_2 = lattice[(i - 1) % N][j][1]
           
           if j-1 < 0:
             S_3 = 0
           else:
-            S_3 = lattice[i][j_neigh][1]
+            S_3 = lattice[i][(j - 1) % N][1]
 
         en_mat[i][j] = -J*lattice[i][j][0]*(S_1 + S_2 + S_3)
 
