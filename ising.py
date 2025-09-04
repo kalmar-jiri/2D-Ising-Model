@@ -13,8 +13,8 @@ k_B = 0.0861733 # meV/K
 # B = 1/(k*T)
 
 print("--------- 2D ISING MODEL ---------")
-N, periodic, J0, J1, J2, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, file_write = read_input.read_input('input.dat')
-print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ_COUPL={J0} {J1} {J2}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nANNEAL={annealing_mode}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
+N, periodic, J0, J1, J2, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, temp_K, start_temp_K, end_temp_K, step_temp_K, annealing_mode, B, file_write = read_input.read_input('input.dat')
+print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ_COUPL={J0} {J1} {J2}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nTEMP={temp_K}\nT_START={start_temp_K}\nT_END={end_temp_K}\nT_STEP={step_temp_K}\nANNEAL={annealing_mode}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
 
 # changing to boolean values so that Numba doesn't fall into "object mode"
 periodic_flag = 1 if periodic == 'y' else 0
@@ -298,9 +298,12 @@ def avg_energy_spin_temp(lattice, mc_steps, start_temp_K, end_temp_K, step_temp_
 
 if mode_choice == 1:
   plots.plot_snapshot(lattice, title="Initial configuration", filename='./starting-config.png')
+  if temp_K == 0:
+    temp_K = 1e-9
+  B = 1.0 / (k_B * temp_K)
   config_energies, config_spins, lattice = metropolis(lattice.copy(), mc_steps, B)
   plots.plot_snapshot(lattice, title="Final configuration", filename='./ending-config.png')
   plots.plot_energy_spin(config_energies, config_spins, B)
 
 elif mode_choice == 2:
-  avg_energy_spin_temp(lattice.copy(), mc_steps, 0.0, 1005.0, 5.0)
+  avg_energy_spin_temp(lattice.copy(), mc_steps, start_temp_K, end_temp_K + step_temp_K, step_temp_K)

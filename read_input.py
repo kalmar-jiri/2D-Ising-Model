@@ -24,8 +24,12 @@ def read_input(filename):
     distribution_bias = float(params.get('DISTB', 0.6))
     lattice_geometry = params.get('LATGEO', 's')[0].lower()
     mode_choice = int(params.get('MODE', 1))
+    temp_K = float(params.get('TEMP', 1.0))
+    start_temp_K = float(params.get('T_START', 0.0))
+    end_temp_K = float(params.get('T_END', 500.0))
+    step_temp_K = float(params.get('T_STEP', 5.0))
     annealing_mode = params.get('ANNEAL', '.TRUE.')
     B = float(params.get('BTEMP', 1.5))
     write_file = params.get('FILE_WRT', '.FALSE.')
 
-    return n, periodic, J0, J1, J2, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, write_file
+    return n, periodic, J0, J1, J2, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, temp_K, start_temp_K, end_temp_K, step_temp_K, annealing_mode, B, write_file
