@@ -32,77 +32,57 @@ def get_energy(lattice):
   """Calculates energies of sites based on their nearest neighbors and then calculates the energy of the entire configuration"""
   en_mat = np.zeros((N,N))
 
-  # Calculate the energy matrix for SQUARE spin lattice
+  # --- CALCULATE THE ENERGY MATRIX FOR SQUARE LATTICE ---
   if lattice_geometry_flag == 0:
     for i in range(N):
       for j in range(N):
+        # Periodic boundary condicitons
         if periodic_flag == 1:
+          # --- NEAREST NEIGHBORS ---
           S_top = lattice[(i - 1) % N][j]
+          S_bottom = lattice[(i + 1) % N][j]
           S_left = lattice[i][(j - 1) % N]
+          S_right = lattice[i][(j + 1) % N]
 
-          if i+1 > N-1:
-            S_bottom = lattice[0][j]
-          else:
-            S_bottom = lattice[(i + 1) % N][j]
+          # --- NEXT-NEAREST NEIGHBORS ---
+          # (here will be the respective code)
 
-          if j+1 > N-1:
-            S_right = lattice[i][0]
-          else:
-            S_right = lattice[i][(j + 1) % N]
-
+        # Non-periodic boundary condicitons
         elif periodic_flag == 0:
-          if i-1 < 0:
-            S_top = 0
-          else:
-            S_top = lattice[(i - 1) % N][j]
-
-          if i+1 > N-1:
-            S_bottom = 0
-          else:
-            S_bottom = lattice[(i + 1) % N][j]
-
-          if j+1 > N-1:
-            S_right = 0
-          else:
-            S_right = lattice[i][(j + 1) % N]
-
-          if j-1 < 0:
-            S_left = 0
-          else:
-            S_left = lattice[i][(j - 1) % N]
+          # --- NEAREST NEIGHBORS ---
+          S_top = lattice[i - 1][j] if i > 0 else 0
+          S_bottom = lattice[i + 1][j] if i < N - 1 else 0
+          S_right = lattice[i][j + 1] if j < N - 1 else 0
+          S_left = lattice[i][j - 1] if j > 0 else 0
 
         en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
 
     return 0.5*np.sum(en_mat)
 
-  # Calculate the energy matrix for HEXAGONAL spin lattice
+  # --- CALCULATE THE ENERGY MATRIX FOR HEXAGONAL LATTICE ---
   elif lattice_geometry_flag == 1:
     for i in range(N):
       for j in range(N):
+        # Periodic boundary condicitons
         if periodic_flag == 1:
+          # --- NEAREST NEIGHBORS ---
           S_1 = lattice[i][j][1]
           S_2 = lattice[(i - 1) % N][j][1]
           S_3 = lattice[i][(j - 1) % N][1]
 
+        # Non-periodic boundary condicitons
         elif periodic_flag == 0:
+          # --- NEAREST NEIGHBORS ---
           S_1 = lattice[i][j][1]
-
-          if i-1 < 0:
-            S_2 = 0
-          else:
-            S_2 = lattice[(i - 1) % N][j][1]
-          
-          if j-1 < 0:
-            S_3 = 0
-          else:
-            S_3 = lattice[i][(j - 1) % N][1]
+          S_2 = lattice[i - 1][j][1] if i > 0 else 0
+          S_3 = lattice[i][j - 1][1] if j > 0 else 0
 
         en_mat[i][j] = -J*lattice[i][j][0]*(S_1 + S_2 + S_3)
 
     return np.sum(en_mat)
 
 @njit
-def get_neighbor_sum(lattice, i, j, k):
+def get_neighbor_spin_sum(lattice, i, j, k):
   """Calculates the sum of neighboring spins for a given state"""
   # --- SQUARE LATTICE ---
   if lattice_geometry_flag == 0:
@@ -166,7 +146,7 @@ def _metropolis_loop(lattice, steps, B, energy, total_spin, config_energies, con
     spin = lattice[i, j, k] if lattice_geometry_flag == 1 else lattice[i, j]
 
     # Get a sum of its neighbors
-    neighbor_sum = get_neighbor_sum(lattice, i, j, k)
+    neighbor_sum = get_neighbor_spin_sum(lattice, i, j, k)
 
     # Calculation of the PROSPECTIVE ENERGY DIFFERENCE (dE)
     # that would occur if the spin were to be flipped
