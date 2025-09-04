@@ -13,8 +13,8 @@ import read_input
 # B = 1/(k*T)
 
 print("--------- 2D ISING MODEL ---------")
-N, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, file_write = read_input.read_input('input.dat')
-print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ={J}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nANNEAL={annealing_mode}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
+N, periodic, J0, J1, J2, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, file_write = read_input.read_input('input.dat')
+print(f'INPUT PARAMETERS:\nNRANK={N}\nPERIODIC={periodic}\nJ_COUPL={J0} {J1} {J2}\nMC_STEPS={mc_steps}\nLATORD={lattice_order}\nDISTB={distribution_bias}\nLATGEO={lattice_geometry}\nMODE={mode_choice}\nANNEAL={annealing_mode}\nBTEMP={B}\nFILE_WRT={file_write}\n----------------')
 
 # changing to boolean values so that Numba doesn't fall into "object mode"
 periodic_flag = 1 if periodic == 'y' else 0
@@ -43,9 +43,16 @@ def get_energy(lattice):
           S_bottom = lattice[(i + 1) % N][j]
           S_left = lattice[i][(j - 1) % N]
           S_right = lattice[i][(j + 1) % N]
-
           # --- NEXT-NEAREST NEIGHBORS ---
-          # (here will be the respective code)
+          S_NN_1 = lattice[(i + 1) % N][(j + 1) % N]
+          S_NN_2 = lattice[(i + 1) % N][(j - 1) % N]
+          S_NN_3 = lattice[(i - 1) % N][(j + 1) % N]
+          S_NN_4 = lattice[(i - 1) % N][(j - 1) % N]
+          # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+          S_NNN_1 = lattice[(i + 2) % N][j]
+          S_NNN_2 = lattice[(i - 2) % N][j]
+          S_NNN_3 = lattice[i][(j + 2) % N]
+          S_NNN_4 = lattice[i][(j - 2) % N]
 
         # Non-periodic boundary condicitons
         elif periodic_flag == 0:
@@ -54,8 +61,18 @@ def get_energy(lattice):
           S_bottom = lattice[i + 1][j] if i < N - 1 else 0
           S_right = lattice[i][j + 1] if j < N - 1 else 0
           S_left = lattice[i][j - 1] if j > 0 else 0
-
-        en_mat[i][j] = -J*lattice[i][j]*(S_top + S_bottom + S_right + S_left)
+          # --- NEXT-NEAREST NEIGHBORS ---
+          S_NN_1 = lattice[i + 1][j + 1] if (i < N - 1 and j < N - 1) else 0
+          S_NN_2 = lattice[i + 1][j - 1] if (i < N - 1 and j > 0) else 0
+          S_NN_3 = lattice[i - 1][j + 1] if (i > 0 and j < N - 1) else 0
+          S_NN_4 = lattice[i - 1][j - 1] if (i > 0 and j > 0) else 0
+          # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+          S_NNN_1 = lattice[i + 2][j] if i < N - 2 else 0
+          S_NNN_2 = lattice[i - 2][j] if i > 1 else 0
+          S_NNN_3 = lattice[i][j + 2] if j < N - 2 else 0
+          S_NNN_4 = lattice[i][j - 2] if j > 1 else 0
+          
+        en_mat[i][j] = -J0*lattice[i][j]*(S_top + S_bottom + S_right + S_left) - J1*lattice[i][j]*(S_NN_1 + S_NN_2 + S_NN_3 + S_NN_4) - J2*lattice[i][j]*(S_NNN_1 + S_NNN_2 + S_NNN_3 + S_NNN_4)
 
     return 0.5*np.sum(en_mat)
 
@@ -77,7 +94,7 @@ def get_energy(lattice):
           S_2 = lattice[i - 1][j][1] if i > 0 else 0
           S_3 = lattice[i][j - 1][1] if j > 0 else 0
 
-        en_mat[i][j] = -J*lattice[i][j][0]*(S_1 + S_2 + S_3)
+        en_mat[i][j] = -J0*lattice[i][j][0]*(S_1 + S_2 + S_3)
 
     return np.sum(en_mat)
 
@@ -88,17 +105,44 @@ def get_neighbor_spin_sum(lattice, i, j, k):
   if lattice_geometry_flag == 0:
     # Periodic boundary conditions
     if periodic_flag == 1:
+      # --- NEAREST NEIGHBORS ---
       S_top = lattice[(i - 1) % N, j]
       S_bottom = lattice[(i + 1) % N, j]
       S_left = lattice[i, (j - 1) % N]
       S_right = lattice[i, (j + 1) % N]
+      # --- NEXT-NEAREST NEIGHBORS ---
+      S_NN_1 = lattice[(i + 1) % N][(j + 1) % N]
+      S_NN_2 = lattice[(i + 1) % N][(j - 1) % N]
+      S_NN_3 = lattice[(i - 1) % N][(j + 1) % N]
+      S_NN_4 = lattice[(i - 1) % N][(j - 1) % N]
+      # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+      S_NNN_1 = lattice[(i + 2) % N][j]
+      S_NNN_2 = lattice[(i - 2) % N][j]
+      S_NNN_3 = lattice[i][(j + 2) % N]
+      S_NNN_4 = lattice[i][(j - 2) % N]
+
     # Non-periodic boundary conditions
     else:
+      # --- NEAREST NEIGHBORS ---
       S_top = lattice[i - 1, j] if i > 0 else 0
       S_bottom = lattice[i + 1, j] if i < N - 1 else 0
       S_left = lattice[i, j - 1] if j > 0 else 0
       S_right = lattice[i, j + 1] if j < N - 1 else 0
-    return S_top + S_bottom + S_left + S_right
+      # --- NEXT-NEAREST NEIGHBORS ---
+      S_NN_1 = lattice[i + 1][j + 1] if (i < N - 1 and j < N - 1) else 0
+      S_NN_2 = lattice[i + 1][j - 1] if (i < N - 1 and j > 0) else 0
+      S_NN_3 = lattice[i - 1][j + 1] if (i > 0 and j < N - 1) else 0
+      S_NN_4 = lattice[i - 1][j - 1] if (i > 0 and j > 0) else 0
+      # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+      S_NNN_1 = lattice[i + 2][j] if i < N - 2 else 0
+      S_NNN_2 = lattice[i - 2][j] if i > 1 else 0
+      S_NNN_3 = lattice[i][j + 2] if j < N - 2 else 0
+      S_NNN_4 = lattice[i][j - 2] if j > 1 else 0
+
+    neighbor_sum = S_top + S_bottom + S_left + S_right
+    next_neighbor_sum = S_NN_1 + S_NN_2 + S_NN_3 + S_NN_4
+    next_next_neighbor_sum = S_NNN_1 + S_NNN_2 + S_NNN_3 + S_NNN_4
+    return neighbor_sum, next_neighbor_sum, next_next_neighbor_sum
   
   # --- HEXAGONAL LATTICE ---
   elif lattice_geometry_flag == 1:
@@ -146,7 +190,7 @@ def _metropolis_loop(lattice, steps, B, energy, total_spin, config_energies, con
     spin = lattice[i, j, k] if lattice_geometry_flag == 1 else lattice[i, j]
 
     # Get a sum of its neighbors
-    neighbor_sum = get_neighbor_spin_sum(lattice, i, j, k)
+    neighbor_sum, next_neighbor_sum, next_next_neighbor_sum = get_neighbor_spin_sum(lattice, i, j, k)
 
     # Calculation of the PROSPECTIVE ENERGY DIFFERENCE (dE)
     # that would occur if the spin were to be flipped
@@ -159,7 +203,7 @@ def _metropolis_loop(lattice, steps, B, energy, total_spin, config_energies, con
     #
     # For us, S_i = spin and sum(S_j) = neighbor_sum
     # this way, we do not need to modify the lattice before we know whether we will be accepting it
-    dE = 2 * J * spin * neighbor_sum
+    dE = (2 * J0 * spin * neighbor_sum) + (2 * J1 * spin * next_neighbor_sum) + (2 * J2 * spin * next_next_neighbor_sum)
 
     if dE < 0 or math.exp(-B*dE) > np.random.random():
       if lattice_geometry_flag == 1:

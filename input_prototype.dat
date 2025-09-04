@@ -4,8 +4,8 @@ NRANK = 50
 # Periodic boundary conditions (.TRUE. / .FALSE.)
 PERIODIC = .FALSE.
 
-# Exchange coupling parameter (1.0 Ferromagnetic / -1.0 Antiferromagnetic)
-J = 1.0
+# Exchange coupling parameters for the nearest neighbor (J0), next-nearest neighbor (J1), and the next-next-nearest neighbor (J2) (1.0 Ferromagnetic / -1.0 Antiferromagnetic)
+J_COUPL = 1.0 1.0 1.0
 
 # Number of Monte Carlo steps
 MC_STEPS = 8E+5

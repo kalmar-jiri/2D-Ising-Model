@@ -17,7 +17,8 @@ def read_input(filename):
     # Each parameter has a DEFAULT value (for case if it's missing in 'input.dat')
     n = int(params.get('NRANK', 50))
     periodic = 'y' if params.get('PERIODIC', '.TRUE.') == '.TRUE.' else 'n'
-    J = float(params.get('J', 1.0))
+    J_values = list(filter(None, params.get('J_COUPL', '1.0 1.0 1.0').split(' '))) # Intermediate step to clean the input. Even something like 'J_COUPL = 1.0      -1.0  2.5' is accepted.
+    J0, J1, J2 = [float(x.strip()) for x in J_values]
     mc_steps = int(float(params.get('MC_STEPS', 200000)))
     lattice_order = params.get('LATORD', 'r')[0].lower()
     distribution_bias = float(params.get('DISTB', 0.6))
@@ -27,4 +28,4 @@ def read_input(filename):
     B = float(params.get('BTEMP', 1.5))
     write_file = params.get('FILE_WRT', '.FALSE.')
 
-    return n, periodic, J, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, write_file
+    return n, periodic, J0, J1, J2, mc_steps, lattice_order, distribution_bias, lattice_geometry, mode_choice, annealing_mode, B, write_file
