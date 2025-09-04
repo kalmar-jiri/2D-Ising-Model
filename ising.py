@@ -28,77 +28,6 @@ elif lattice_geometry == 'h':
 # -------------------------------------------------- #
   
 @njit
-def get_energy(lattice):
-  """Calculates energies of sites based on their nearest neighbors and then calculates the energy of the entire configuration"""
-  en_mat = np.zeros((N,N))
-
-  # --- CALCULATE THE ENERGY MATRIX FOR SQUARE LATTICE ---
-  if lattice_geometry_flag == 0:
-    for i in range(N):
-      for j in range(N):
-        # Periodic boundary condicitons
-        if periodic_flag == 1:
-          # --- NEAREST NEIGHBORS ---
-          S_top = lattice[(i - 1) % N][j]
-          S_bottom = lattice[(i + 1) % N][j]
-          S_left = lattice[i][(j - 1) % N]
-          S_right = lattice[i][(j + 1) % N]
-          # --- NEXT-NEAREST NEIGHBORS ---
-          S_NN_1 = lattice[(i + 1) % N][(j + 1) % N]
-          S_NN_2 = lattice[(i + 1) % N][(j - 1) % N]
-          S_NN_3 = lattice[(i - 1) % N][(j + 1) % N]
-          S_NN_4 = lattice[(i - 1) % N][(j - 1) % N]
-          # --- NEXT-NEXT-NEAREST NEIGHBORS ---
-          S_NNN_1 = lattice[(i + 2) % N][j]
-          S_NNN_2 = lattice[(i - 2) % N][j]
-          S_NNN_3 = lattice[i][(j + 2) % N]
-          S_NNN_4 = lattice[i][(j - 2) % N]
-
-        # Non-periodic boundary condicitons
-        elif periodic_flag == 0:
-          # --- NEAREST NEIGHBORS ---
-          S_top = lattice[i - 1][j] if i > 0 else 0
-          S_bottom = lattice[i + 1][j] if i < N - 1 else 0
-          S_right = lattice[i][j + 1] if j < N - 1 else 0
-          S_left = lattice[i][j - 1] if j > 0 else 0
-          # --- NEXT-NEAREST NEIGHBORS ---
-          S_NN_1 = lattice[i + 1][j + 1] if (i < N - 1 and j < N - 1) else 0
-          S_NN_2 = lattice[i + 1][j - 1] if (i < N - 1 and j > 0) else 0
-          S_NN_3 = lattice[i - 1][j + 1] if (i > 0 and j < N - 1) else 0
-          S_NN_4 = lattice[i - 1][j - 1] if (i > 0 and j > 0) else 0
-          # --- NEXT-NEXT-NEAREST NEIGHBORS ---
-          S_NNN_1 = lattice[i + 2][j] if i < N - 2 else 0
-          S_NNN_2 = lattice[i - 2][j] if i > 1 else 0
-          S_NNN_3 = lattice[i][j + 2] if j < N - 2 else 0
-          S_NNN_4 = lattice[i][j - 2] if j > 1 else 0
-          
-        en_mat[i][j] = -J0*lattice[i][j]*(S_top + S_bottom + S_right + S_left) - J1*lattice[i][j]*(S_NN_1 + S_NN_2 + S_NN_3 + S_NN_4) - J2*lattice[i][j]*(S_NNN_1 + S_NNN_2 + S_NNN_3 + S_NNN_4)
-
-    return 0.5*np.sum(en_mat)
-
-  # --- CALCULATE THE ENERGY MATRIX FOR HEXAGONAL LATTICE ---
-  elif lattice_geometry_flag == 1:
-    for i in range(N):
-      for j in range(N):
-        # Periodic boundary condicitons
-        if periodic_flag == 1:
-          # --- NEAREST NEIGHBORS ---
-          S_1 = lattice[i][j][1]
-          S_2 = lattice[(i - 1) % N][j][1]
-          S_3 = lattice[i][(j - 1) % N][1]
-
-        # Non-periodic boundary condicitons
-        elif periodic_flag == 0:
-          # --- NEAREST NEIGHBORS ---
-          S_1 = lattice[i][j][1]
-          S_2 = lattice[i - 1][j][1] if i > 0 else 0
-          S_3 = lattice[i][j - 1][1] if j > 0 else 0
-
-        en_mat[i][j] = -J0*lattice[i][j][0]*(S_1 + S_2 + S_3)
-
-    return np.sum(en_mat)
-
-@njit
 def get_neighbor_spin_sum(lattice, i, j, k):
   """Calculates the sum of neighboring spins for a given state"""
   # --- SQUARE LATTICE ---
@@ -122,7 +51,7 @@ def get_neighbor_spin_sum(lattice, i, j, k):
       S_NNN_4 = lattice[i][(j - 2) % N]
 
     # Non-periodic boundary conditions
-    else:
+    elif periodic_flag == 0:
       # --- NEAREST NEIGHBORS ---
       S_top = lattice[i - 1, j] if i > 0 else 0
       S_bottom = lattice[i + 1, j] if i < N - 1 else 0
@@ -147,38 +76,133 @@ def get_neighbor_spin_sum(lattice, i, j, k):
   # --- HEXAGONAL LATTICE ---
   elif lattice_geometry_flag == 1:
     neighbor_sublattice = 1 - k
-    # Neighbors of spin (i,j,0) are on sublattice 1
+    # Nearest-neighbors of spin (i,j,0) are on sublattice 1, next-nearest are on sublattice 0, and next-next-nearest are again on sublattice 1
     if k == 0:
       # Periodic boundary conditions
       if periodic_flag == 1:
+        # --- NEAREST NEIGHBORS ---
         S_1 = lattice[i, j, neighbor_sublattice]
         S_2 = lattice[(i - 1) % N, j, neighbor_sublattice]
         S_3 = lattice[i, (j - 1) % N, neighbor_sublattice]
-      else:
+        # --- NEXT-NEAREST NEIGHBORS ---
+        S_NN_1 = lattice[(i + 1) % N][j][k]
+        S_NN_2 = lattice[(i - 1) % N][j][k]
+        S_NN_3 = lattice[i][(j + 1) % N][k]
+        S_NN_4 = lattice[i][(j - 1) % N][k]
+        S_NN_5 = lattice[(i + 1) % N][(j - 1) % N][k]
+        S_NN_6 = lattice[(i - 1) % N][(j + 1) % N][k]
+        # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+        S_NNN_1 = lattice[(i - 1) % N][(j - 1) % N][neighbor_sublattice]
+        S_NNN_2 = lattice[(i - 1) % N][(j + 1) % N][neighbor_sublattice]
+        S_NNN_3 = lattice[(i + 1) % N][(j - 1) % N][neighbor_sublattice]
+
       # Non-periodic boundary conditions
+      elif periodic_flag == 0:
+        # --- NEAREST NEIGHBORS ---
         S_1 = lattice[i, j, neighbor_sublattice]
-        S_2 = lattice[(i - 1) % N, j, neighbor_sublattice] if i > 0 else 0
-        S_3 = lattice[i, (j - 1) % N, neighbor_sublattice] if j > 0 else 0
-    # Neighbors of spin (i,j,1) are on sublattice 0
+        S_2 = lattice[i - 1, j, neighbor_sublattice] if i > 0 else 0
+        S_3 = lattice[i, j - 1, neighbor_sublattice] if j > 0 else 0
+        # --- NEXT-NEAREST NEIGHBORS ---
+        S_NN_1 = lattice[i + 1][j][k] if i < N - 1 else 0
+        S_NN_2 = lattice[i - 1][j][k] if i > 0 else 0
+        S_NN_3 = lattice[i][j + 1][k] if j < N - 1 else 0
+        S_NN_4 = lattice[i][j - 1][k] if j > 0 else 0
+        S_NN_5 = lattice[i + 1][j - 1][k] if (i < N - 1 and j > 0) else 0
+        S_NN_6 = lattice[i - 1][j + 1][k] if (i > 0 and j < N - 1) else 0
+        # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+        S_NNN_1 = lattice[i - 1][j - 1][neighbor_sublattice] if (i > 0 and j > 0) else 0
+        S_NNN_2 = lattice[i - 1][j + 1][neighbor_sublattice] if (i > 0 and j < N - 1) else 0
+        S_NNN_3 = lattice[i + 1][j - 1][neighbor_sublattice] if (i < N - 1 and j > 0) else 0
+
+    # Nearest-neighbors of spin (i,j,1) are on sublattice 0, next-nearest are on sublattice 1, and next-next-nearest are again on sublattice 0
     elif k == 1:
       # Periodic boundary conditions
       if periodic_flag == 1:
+        # --- NEAREST NEIGHBORS ---
         S_1 = lattice[i, j, neighbor_sublattice]
         S_2 = lattice[(i + 1) % N, j, neighbor_sublattice]
         S_3 = lattice[i, (j + 1) % N, neighbor_sublattice]
-      else:
-      # Non-periodic boundary conditions
-        S_1 = lattice[i, j, neighbor_sublattice]
-        S_2 = lattice[(i + 1) % N, j, neighbor_sublattice] if i > 0 else 0
-        S_3 = lattice[i, (j + 1) % N, neighbor_sublattice] if j > 0 else 0
-    return S_1 + S_2 + S_3
+        # --- NEXT-NEAREST NEIGHBORS --- (here the signs are the same for both sublattices)
+        S_NN_1 = lattice[(i + 1) % N][j][k]
+        S_NN_2 = lattice[(i - 1) % N][j][k]
+        S_NN_3 = lattice[i][(j + 1) % N][k]
+        S_NN_4 = lattice[i][(j - 1) % N][k]
+        S_NN_5 = lattice[(i + 1) % N][(j - 1) % N][k]
+        S_NN_6 = lattice[(i - 1) % N][(j + 1) % N][k]
+        # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+        S_NNN_1 = lattice[(i + 1) % N][(j + 1) % N][neighbor_sublattice]
+        S_NNN_2 = lattice[(i + 1) % N][(j - 1) % N][neighbor_sublattice]
+        S_NNN_3 = lattice[(i - 1) % N][(j + 1) % N][neighbor_sublattice]
 
+      # Non-periodic boundary conditions
+      elif periodic_flag == 0:
+        # --- NEAREST NEIGHBORS ---
+        S_1 = lattice[i, j, neighbor_sublattice]
+        S_2 = lattice[i + 1, j, neighbor_sublattice] if i < N - 1 else 0
+        S_3 = lattice[i, j + 1, neighbor_sublattice] if j < N - 1 else 0
+        # --- NEXT-NEAREST NEIGHBORS --- (here the signs are the same for both sublattices)
+        S_NN_1 = lattice[i + 1][j][k] if i < N - 1 else 0
+        S_NN_2 = lattice[i - 1][j][k] if i > 0 else 0
+        S_NN_3 = lattice[i][j + 1][k] if j < N - 1 else 0
+        S_NN_4 = lattice[i][j - 1][k] if j > 0 else 0
+        S_NN_5 = lattice[i + 1][j - 1][k] if (i < N - 1 and j > 0) else 0
+        S_NN_6 = lattice[i - 1][j + 1][k] if (i > 0 and j < N - 1) else 0
+        # --- NEXT-NEXT-NEAREST NEIGHBORS ---
+        S_NNN_1 = lattice[i + 1][j + 1][neighbor_sublattice] if (i < N - 1 and j < N - 1) else 0
+        S_NNN_2 = lattice[i + 1][j - 1][neighbor_sublattice] if (i < N - 1 and j > 0) else 0
+        S_NNN_3 = lattice[i - 1][j + 1][neighbor_sublattice] if (i > 0 and j < N - 1) else 0
+
+    neighbor_sum = S_1 + S_2 + S_3
+    next_neighbor_sum = S_NN_1 + S_NN_2 + S_NN_3 + S_NN_4 + S_NN_5 + S_NN_6
+    next_next_neighbor_sum = S_NNN_1 + S_NNN_2 + S_NNN_3
+    return neighbor_sum, next_neighbor_sum, next_next_neighbor_sum
+
+
+@njit
+def get_energy(lattice):
+  """Calculates energies of sites based on their nearest neighbors and then calculates the energy of the entire configuration"""
+  en_mat = np.zeros((N,N))
+
+  # --- CALCULATE THE ENERGY MATRIX FOR SQUARE LATTICE ---
+  if lattice_geometry_flag == 0:
+    for i in range(N):
+      for j in range(N):
+        neighbor_sum, next_neighbor_sum, next_next_neighbor_sum = get_neighbor_spin_sum(lattice, i, j, 0) # k=0 is a placeholder
+        en_mat[i][j] = -J0 * lattice[i][j] * neighbor_sum - J1 * lattice[i][j] * next_neighbor_sum - J2 * lattice[i][j] * next_next_neighbor_sum
+
+    return 0.5*np.sum(en_mat)
+
+  # --- CALCULATE THE ENERGY MATRIX FOR HEXAGONAL LATTICE ---
+  elif lattice_geometry_flag == 1:
+    # Here different way of calculating energy is used (with J0_energy, etc.). The core issue is bond counting. To get the total energy, every unique bond's energy contribution should be counted exactly once. For hexagonal lattice, we have two different kinds of bonds, and they require different counting methods.
+    # Current implementation is self-documenting. It explicitly shows that J1 is treated differently from J0 and J2.
+    J0_energy = 0.0
+    J1_energy = 0.0
+    J2_energy = 0.0
+
+    # J0 and J2 bonds are between sublattices. Loop over one sublattice (k=0) to count each bond once.
+    for i in range(N):
+      for j in range(N):
+        neighbor_sum, next_neighbor_sum, next_next_neighbor_sum = get_neighbor_spin_sum(lattice, i, j, 0) # Use k=0
+
+        J0_energy += -J0 * lattice[i][j][0] * neighbor_sum
+        J2_energy += -J2 * lattice[i][j][0] * next_next_neighbor_sum
+
+    # J1 bonds are within the same sublattice. Loop over both sublattices and divide by 2
+    for k in range(2):
+      for i in range(N):
+        for j in range(N):
+          _, next_neighbor_sum, _ = get_neighbor_spin_sum(lattice, i, j, k)
+
+          J1_energy += -J1 * lattice[i][j][k] * next_neighbor_sum
+
+    return J0_energy + (0.5 * J1_energy) + J2_energy
 
 # Metropolis algorithm
 @njit
 def _metropolis_loop(lattice, steps, B, energy, total_spin, config_energies, config_spins):
   """Main Metropolis algorithm loop. Picks a random spin on the lattice, sums up the spins of its neighbors, and calculates the change in energy that would occur if the chosen spin was flipped. Based on the energy change, lattice is either kept the same or changed into the new configuration. Returns array of energies, array of average spins in each step and the final configuration for the plot."""
-  for step in range(steps + 1):
+  for step in range(steps):
     if step % 100_000 == 0:
       # This print will be redirected to the console even from a Numba function
       print(f'Working on step {step}')
